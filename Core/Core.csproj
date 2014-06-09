@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6F777AC1-C0A4-4EB8-B5F4-CB0A9E7F031D}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>AutomationLibrary</RootNamespace>
+    <AssemblyName>Core</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Collections\CollectionExtensions.cs" />
+    <Compile Include="Collections\RingBuffer`1.cs" />
+    <Compile Include="Concurrency\Latch.cs" />
+    <Compile Include="Concurrency\ManualResetEventLatch.cs" />
+    <Compile Include="Controllers\IConsumerChannel`1.cs" />
+    <Compile Include="Controllers\IControllerConnection`1.cs" />
+    <Compile Include="Controllers\IControllerConnectionFactory`1.cs" />
+    <Compile Include="Controllers\IDeferredTransferDeclarationSpace`1.cs" />
+    <Compile Include="Controllers\IMutableVariable`1.cs" />
+    <Compile Include="Controllers\IDeclarationSpace`1.cs" />
+    <Compile Include="Controllers\IProducerChannel`1.cs" />
+    <Compile Include="Controllers\ISignal`1.cs" />
+    <Compile Include="Controllers\IVariable`1.cs" />
+    <Compile Include="Concurrency\IWaitHandle.cs" />
+    <Compile Include="Controllers\Modbus\CoilAddress.cs" />
+    <Compile Include="Controllers\Modbus\CoilVariable.cs" />
+    <Compile Include="Controllers\Modbus\HoldingRegisterAddress.cs" />
+    <Compile Include="Controllers\Modbus\HoldingRegisterVariable.cs" />
+    <Compile Include="Controllers\Modbus\InputRegisterAddress.cs" />
+    <Compile Include="Controllers\Modbus\InputAddress.cs" />
+    <Compile Include="Controllers\Modbus\DatumAddress.cs" />
+    <Compile Include="Controllers\Modbus\DatumAddressKind.cs" />
+    <Compile Include="Controllers\Modbus\FunctionCode.cs" />
+    <Compile Include="Controllers\Modbus\InputRegisterVariable.cs" />
+    <Compile Include="Controllers\Modbus\InputVariable.cs" />
+    <Compile Include="Controllers\Modbus\SlaveAddress.cs" />
+    <Compile Include="Controllers\PlcTypeNameAttribute.cs" />
+    <Compile Include="Controllers\Signal`1.cs" />
+    <Compile Include="Controllers\VariableExtensions.cs" />
+    <Compile Include="Controllers\WrappedMutableVariable`2.cs" />
+    <Compile Include="Controllers\WrappedVariable`2.cs" />
+    <Compile Include="Concurrency\ILatch.cs" />
+    <Compile Include="Mathematics\ExtrapolationBehavior.cs" />
+    <Compile Include="Mathematics\Geometry\Circle2.cs" />
+    <Compile Include="Mathematics\Geometry\Line2.cs" />
+    <Compile Include="Mathematics\Geometry\LineSegment2.cs" />
+    <Compile Include="Mathematics\Geometry\Plane3.cs" />
+    <Compile Include="Mathematics\IllConditionedProblemException.cs" />
+    <Compile Include="Mathematics\InterpolationBehavior.cs" />
+    <Compile Include="Mathematics\PiecewiseFunction.cs" />
+    <Compile Include="Mathematics\RationalFunction.cs" />
+    <Compile Include="Mathematics\RationalFunctionForm.cs" />
+    <Compile Include="Mathematics\Vector2F.cs" />
+    <Compile Include="Mathematics\Vector3.cs" />
+    <Compile Include="Mathematics\Vector3F.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Mathematics\Vector2.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
