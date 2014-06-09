@@ -43,7 +43,20 @@
     <Compile Include="Confocal\CCSInitialSensorConnection.cs" />
     <Compile Include="Confocal\DistanceModeDataItems.cs" />
     <Compile Include="Confocal\PresetSampleRate.cs" />
+    <Compile Include="Profile\AP820Scanner.cs" />
+    <Compile Include="Profile\ConnectionStatus.cs" />
+    <Compile Include="Profile\DroppedFrameResponse.cs" />
+    <Compile Include="Profile\MeasurementControlMode.cs" />
+    <Compile Include="Profile\NativeMethods.cs" />
+    <Compile Include="Profile\ScannerInformation.cs" />
+    <Compile Include="Profile\ScanResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj">
+      <Project>{6F777AC1-C0A4-4EB8-B5F4-CB0A9E7F031D}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
