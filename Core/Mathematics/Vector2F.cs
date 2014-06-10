@@ -131,6 +131,13 @@ namespace AutomationLibrary.Mathematics
             return (a - b).Length;
         }
 
+        public static T AngleBetweenVectorsInRadians(Vector2F a, Vector2F b)
+        {
+            var cosine = DotProduct(a, b) / (a.Length * b.Length);
+
+            return (T)Math.Acos(cosine);
+        }
+
         public T[] ToArray()
         {
             return new T[] { X, Y };
