@@ -123,6 +123,11 @@ namespace AutomationLibrary.Mathematics
             return new Vector3F(x, y, z);
         }
 
+        public static T DistanceBetweenPoints(Vector3F a, Vector3F b)
+        {
+            return (a - b).Length;
+        }
+
         public T[] ToArray()
         {
             return new T[] { X, Y, Z };

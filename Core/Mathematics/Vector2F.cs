@@ -126,6 +126,11 @@ namespace AutomationLibrary.Mathematics
             return (a.x * b.x) + (a.y * b.y);
         }
 
+        public static T DistanceBetweenPoints(Vector2F a, Vector2F b)
+        {
+            return (a - b).Length;
+        }
+
         public T[] ToArray()
         {
             return new T[] { X, Y };
