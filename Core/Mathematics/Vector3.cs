@@ -87,6 +87,14 @@ namespace AutomationLibrary.Mathematics
 
         public Vector3 ZComponent { get { return new Vector3(0, 0, z); } }
 
+        public bool IsNaN
+        {
+            get
+            {
+                return T.IsNaN(x) || T.IsNaN(y) || T.IsNaN(z);
+            }
+        }
+
         #endregion
 
         public bool TryNormalize(out Vector3 result)

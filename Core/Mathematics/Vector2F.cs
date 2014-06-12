@@ -99,6 +99,14 @@ namespace AutomationLibrary.Mathematics
 
         public Vector2F YComponent { get { return new Vector2F(0, y); } }
 
+        public bool IsNaN
+        {
+            get
+            {
+                return T.IsNaN(x) || T.IsNaN(y);
+            }
+        }
+
         #endregion
 
         public bool TryNormalize(out Vector2F result)
