@@ -26,7 +26,17 @@ namespace AutomationLibrary.Mathematics.Geometry
 
         public double DistanceFromCircle(Vector2 point)
         {
-            return Math.Abs((point - _center).Length - _radius);
+            return Math.Abs(SignedDistanceFromCircle(point));
+        }
+
+        public double SignedDistanceFromCircle(Vector2 point)
+        {
+            return (point - _center).Length - _radius;
+        }
+
+        public bool Contains(Vector2 point)
+        {
+            return SignedDistanceFromCircle(point) <= 0;
         }
     }
 }
