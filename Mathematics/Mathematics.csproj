@@ -46,6 +46,8 @@
     <Compile Include="Fitting\GeometricFits.cs" />
     <Compile Include="Fitting\IRationalFunctionFitter.cs" />
     <Compile Include="Fitting\PolynomialFunctionFitter.cs" />
+    <Compile Include="Geometry\Voronoi\VoronoiDiagram.cs" />
+    <Compile Include="Geometry\Voronoi\VoronoiEdge.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
