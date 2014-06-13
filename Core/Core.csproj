@@ -74,6 +74,7 @@
     <Compile Include="Mathematics\Geometry\Line2.cs" />
     <Compile Include="Mathematics\Geometry\LineSegment2.cs" />
     <Compile Include="Mathematics\Geometry\Plane3.cs" />
+    <Compile Include="Mathematics\Geometry\PointCloud2.cs" />
     <Compile Include="Mathematics\IllConditionedProblemException.cs" />
     <Compile Include="Mathematics\InterpolationBehavior.cs" />
     <Compile Include="Mathematics\PiecewiseFunction.cs" />

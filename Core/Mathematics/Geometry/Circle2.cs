@@ -40,8 +40,9 @@ namespace AutomationLibrary.Mathematics.Geometry
             var center = maybeCenter.Value;
 
             // find the radius as the distance from one of the points to the center
-            // for symmetry we will do all three and average
-            var r = (Vector2.DistanceBetweenPoints(center, a) + Vector2.DistanceBetweenPoints(center, b) + Vector2.DistanceBetweenPoints(center, c)) / 3;
+            // for symmetry we could do all three and average
+            // because we care about conservative inclusion, instead we will take the maximum
+            var r = Math.Max(Vector2.DistanceBetweenPoints(center, a), Math.Max(Vector2.DistanceBetweenPoints(center, b), Vector2.DistanceBetweenPoints(center, c)));
 
             return new Circle2(center, r);
         }
