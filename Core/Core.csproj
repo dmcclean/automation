@@ -38,6 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Collections\CollectionExtensions.cs" />
+    <Compile Include="Collections\Heap`1.cs" />
     <Compile Include="Collections\RingBuffer`1.cs" />
     <Compile Include="Concurrency\Latch.cs" />
     <Compile Include="Concurrency\ManualResetEventLatch.cs" />
