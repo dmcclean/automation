@@ -38,6 +38,21 @@ namespace AutomationLibrary.Mathematics.Geometry
             return Line2.FromCoefficientsOfStandardForm(a, b, c);
         }
 
+        public static Line2 FromPointAndDirection(Vector2 point, Vector2 direction)
+        {
+            var normal = direction.Rotate90Positive().Normalize();
+
+            var distanceFromOriginToPointProjectedOnNormal = Vector2.DotProduct(point, normal);
+            return new Line2(normal, distanceFromOriginToPointProjectedOnNormal);
+        }
+
+        public static Line2 FromTwoPoints(Vector2 a, Vector2 b)
+        {
+            var offset = b - a;
+
+            return FromPointAndDirection(a, offset);
+        }
+
         public Vector2 Normal { get { return _normal; } }
         public double Slope { get { return -_normal.X / _normal.Y; } }
         public double Intercept { get { return _signedDistanceFromOrigin / _normal.Y; } }

@@ -30,7 +30,18 @@ namespace AutomationLibrary.Mathematics.Geometry
         public Vector2 Origin { get { return _origin; } }
         public Vector2 Destination { get { return _destination; } }
 
+        public Vector2 Midpoint { get { return (_origin + _destination) / 2; } }
+
+        public Line2 PerpendicularBisector
+        {
+            get
+            {
+                return Line2.FromPointAndDirection(Midpoint, Offset.Rotate90Positive());
+            }
+        }
+
         public Vector2 Offset { get { return _destination - _origin; } }
+        public double SquaredLength { get { return Offset.SquaredLength; } }
         public double Length { get { return Offset.Length; } }
     }
 }
