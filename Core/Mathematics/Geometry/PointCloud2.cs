@@ -6,6 +6,7 @@ using System.Text;
 namespace AutomationLibrary.Mathematics.Geometry
 {
     public sealed class PointCloud2
+        : IEnumerable<Vector2>
     {
         private readonly List<Vector2> _points;
 
@@ -99,6 +100,16 @@ namespace AutomationLibrary.Mathematics.Geometry
                 }
                 else return incumbent;
             }
+        }
+
+        public IEnumerator<Vector2> GetEnumerator()
+        {
+            return _points.GetEnumerator();
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return (System.Collections.IEnumerator)this.GetEnumerator();
         }
     }
 }

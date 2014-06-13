@@ -21,6 +21,7 @@ namespace AutomationLibrary.Mathematics.Geometry.Voronoi
     {
         public HashSet<Vector2> Vertizes = new HashSet<Vector2>();
         public HashSet<VoronoiEdge> Edges = new HashSet<VoronoiEdge>();
+        public Dictionary<Vector2, List<Vector2>> Vertices = new Dictionary<Vector2, List<Vector2>>();
 
         public static readonly Vector2 VVInfinite = new Vector2(double.PositiveInfinity, double.PositiveInfinity);
         public static readonly Vector2 VVUnkown = new Vector2(double.NaN, double.NaN);
@@ -223,8 +224,35 @@ namespace AutomationLibrary.Mathematics.Geometry.Voronoi
             {
                 VGErg.Vertizes.Add(VE.VVertexA);
                 VGErg.Vertizes.Add(VE.VVertexB);
+
+                if(!VE.VVertexA.IsNaN && !double.IsInfinity(VE.VVertexA.X)) 
+                {
+                    AddToList(VGErg.Vertices, VE.VVertexA, VE.LeftData);
+                    AddToList(VGErg.Vertices, VE.VVertexA, VE.RightData);
+                }
+                if (!VE.VVertexB.IsNaN && !double.IsInfinity(VE.VVertexB.X))
+                {
+                    AddToList(VGErg.Vertices, VE.VVertexB, VE.LeftData);
+                    AddToList(VGErg.Vertices, VE.VVertexB, VE.RightData);
+                }
+
             }
             return VGErg;
+        }
+
+        private static void AddToList(Dictionary<Vector2, List<Vector2>> lists, Vector2 indexPoint, Vector2 pointToAdd)
+        {
+            List<Vector2> list;
+            if (lists.TryGetValue(indexPoint, out list))
+            {
+                if (!list.Contains(pointToAdd)) list.Add(pointToAdd);
+            }
+            else
+            {
+                list = new List<Vector2>();
+                list.Add(pointToAdd);
+                lists.Add(indexPoint, list);
+            }
         }
 
         #region Node Types

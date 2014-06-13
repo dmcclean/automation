@@ -1018,6 +1018,7 @@ namespace TestConsole
             var pointSet = new PointCloud2(points);
 
             var voronoi = AutomationLibrary.Mathematics.Geometry.Voronoi.VoronoiDiagram.ComputeForPoints(points);
+            voronoi = voronoi.Filter(0); // build map of nearest points
 
             var centersOfInfiniteCells = new HashSet<Vector2>();
             foreach (var edge in voronoi.Edges)
@@ -1031,11 +1032,55 @@ namespace TestConsole
 
             var pointSet2 = new PointCloud2(centersOfInfiniteCells);
 
-
             var mcc = pointSet2.ComputeMinimumCircumscribingCircle();
+            var mic = ComputeMaximumInscribedCircle(pointSet, voronoi, mcc);
             var lsc = GeometricFits.FitCircle(points);
 
+            using (var writer = System.IO.File.CreateText(@"C:\users\douglas\desktop\circlepoints.csv"))
+            {
+                writer.WriteLine("X,Y");
+                foreach (var point in pointSet)
+                {
+                    writer.WriteLine("{0},{1}", point.X, point.Y);
+                }
+            }
+
+            Console.WriteLine("n = {0}", points.Count);
+            Console.WriteLine("MIC @ ({0}), r = {1}", mic.Center, mic.Radius);
+            Console.WriteLine("LSC @ ({0}), r = {1}", lsc.Center, lsc.Radius);
+            Console.WriteLine("MCC @ ({0}), r = {1}", mcc.Center, mcc.Radius);
+
+            Console.WriteLine();
+
+            Console.WriteLine("draw.circle({0}, {1}, {2}, border='{3}')", mic.Center.X, mic.Center.Y, mic.Radius, "red");
+            Console.WriteLine("draw.circle({0}, {1}, {2}, border='{3}')", lsc.Center.X, lsc.Center.Y, lsc.Radius, "blue");
+            Console.WriteLine("draw.circle({0}, {1}, {2}, border='{3}')", mcc.Center.X, mcc.Center.Y, mcc.Radius, "green");
+
             Console.ReadLine();
+        }
+
+        private static Circle2 ComputeMaximumInscribedCircle(PointCloud2 points, AutomationLibrary.Mathematics.Geometry.Voronoi.VoronoiDiagram voronoi, Circle2 mcc)
+        {
+            var candidateCenters = new List<Vector2>();
+            candidateCenters.AddRange(voronoi.Vertices.Keys);
+            // TODO: add intersections between voronoi edges and convex hull of points
+
+            Circle2 incumbent = new Circle2(points.First(), 0);
+
+            foreach (var candidate in candidateCenters)
+            {
+                foreach (var neighbor in voronoi.Vertices[candidate])
+                {
+                    var candidateRadius = Vector2.DistanceBetweenPoints(candidate, neighbor);
+
+                    if (candidateRadius > incumbent.Radius && mcc.Contains(candidate))
+                    {
+                        incumbent = new Circle2(candidate, candidateRadius);
+                    }
+                }
+            }
+
+            return incumbent;
         }
 
         static void ProfileTest() 
