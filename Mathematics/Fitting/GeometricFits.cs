@@ -11,10 +11,24 @@ namespace AutomationLibrary.Mathematics.Fitting
         public static Circle2 FitCircle(IList<Vector2> points)
         {
             var n = points.Count;
+            
+            if (n == 3) return Circle2.FromThreePoints(points[0], points[1], points[2]);
+            else return FitCircle(points, p => p.X, p => p.Y, p => 1); // equal weights
+        }
+
+        public static Circle2 FitCircleToWeightedPoints(IList<Vector3> points)
+        {
+            return FitCircle(points, p => p.X, p => p.Y, p => p.Z); // weighted by Z values
+        }
+
+        private static Circle2 FitCircle<T>(IList<T> points, Func<T, double> xSelector, Func<T, double> ySelector, Func<T, double> wSelector)
+        {
+            var n = points.Count;
             if (n < 3) throw new ArgumentException("At least three points are required to fit a circle.");
 
             var x = new double[n, 2];
             var y = new double[n];
+            var w = new double[n];
 
             var minX = double.PositiveInfinity;
             var maxX = double.NegativeInfinity;
@@ -23,14 +37,15 @@ namespace AutomationLibrary.Mathematics.Fitting
 
             for (int i = 0; i < n; i++)
             {
-                x[i, 0] = points[i].X;
-                x[i, 1] = points[i].Y;
+                x[i, 0] = xSelector(points[i]);
+                x[i, 1] = ySelector(points[i]);
                 y[i] = 0; // this point is ideally 0 distance from the fit circle
+                w[i] = wSelector(points[i]);
 
-                minX = Math.Min(minX, points[i].X);
-                maxX = Math.Max(maxX, points[i].X);
-                minY = Math.Min(minY, points[i].Y);
-                maxY = Math.Max(maxY, points[i].Y);
+                minX = Math.Min(minX, x[i,0]);
+                maxX = Math.Max(maxX, x[i,0]);
+                minY = Math.Min(minY, x[i,1]);
+                maxY = Math.Max(maxY, x[i,1]);
             }
 
             var guessCenterX = (minX + maxX) / 2;
@@ -43,7 +58,7 @@ namespace AutomationLibrary.Mathematics.Fitting
 
             var diffStep = 0.0001; // TODO: not sure how to optimally choose this value
 
-            alglib.lsfitcreatef(x, y, c, diffStep, out fitState);
+            alglib.lsfitcreatewf(x, y, w, c, diffStep, out fitState);
             alglib.lsfitsetcond(fitState, 0, 0, 0); // choose stopping conditions automatically
             alglib.lsfitfit(fitState, CircleDistanceFunction, null, null);
 
