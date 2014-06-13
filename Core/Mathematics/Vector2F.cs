@@ -129,6 +129,16 @@ namespace AutomationLibrary.Mathematics
             return this / Length;
         }
 
+        public Vector2F Rotate90Positive()
+        {
+            return new Vector2F(-y, x);
+        }
+
+        public Vector2F Rotate90Negative()
+        {
+            return new Vector2F(y, -x);
+        }
+
         public static T DotProduct(Vector2F a, Vector2F b)
         {
             return (a.x * b.x) + (a.y * b.y);
