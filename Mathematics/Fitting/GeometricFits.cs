@@ -21,6 +21,79 @@ namespace AutomationLibrary.Mathematics.Fitting
             return FitCircle(points, p => p.X, p => p.Y, p => p.Z); // weighted by Z values
         }
 
+        public static Circle2 FitCircleOfKnownRadius(double radius, IList<Vector2> points)
+        {
+            return FitCircleOfKnownRadius(radius, points, p => p.X, p => p.Y, p => 1);
+        }
+
+        public static Circle2 FitCircleOfKnownRadiusToWeightedPoints(double radius, IList<Vector3> points)
+        {
+            return FitCircleOfKnownRadius(radius, points, p => p.X, p => p.Y, p => p.Z);
+        }
+
+        private static Circle2 FitCircleOfKnownRadius<T>(double radius, IList<T> points, Func<T, double> xSelector, Func<T, double> ySelector, Func<T, double> wSelector)
+        {
+            var n = points.Count;
+            if (n < 3) throw new ArgumentException("At least three points are required to fit a circle.");
+
+            var x = new double[n, 2];
+            var y = new double[n];
+            var w = new double[n];
+
+            var minX = double.PositiveInfinity;
+            var maxX = double.NegativeInfinity;
+            var minY = double.PositiveInfinity;
+            var maxY = double.NegativeInfinity;
+
+            for (int i = 0; i < n; i++)
+            {
+                x[i, 0] = xSelector(points[i]);
+                x[i, 1] = ySelector(points[i]);
+                y[i] = 0; // this point is ideally 0 distance from the fit circle
+                w[i] = wSelector(points[i]);
+
+                minX = Math.Min(minX, x[i, 0]);
+                maxX = Math.Max(maxX, x[i, 0]);
+                minY = Math.Min(minY, x[i, 1]);
+                maxY = Math.Max(maxY, x[i, 1]);
+            }
+
+            var guessCenterX = (minX + maxX) / 2;
+            var guessCenterY = (minY + maxY) / 2;
+
+            var c = new double[] { guessCenterX, guessCenterY };
+
+            alglib.lsfitstate fitState;
+
+            var diffStep = 0.0001; // TODO: not sure how to optimally choose this value
+
+            var distanceFunction = CreateCircleOfKnownRadiusDistanceFunction(radius);
+
+            alglib.lsfitcreatewf(x, y, w, c, diffStep, out fitState);
+            alglib.lsfitsetcond(fitState, 0, 0, 0); // choose stopping conditions automatically
+            alglib.lsfitfit(fitState, distanceFunction, null, null);
+
+            int info;
+            alglib.lsfitreport report;
+            alglib.lsfitresults(fitState, out info, out c, out report);
+            /*
+             *        Info    -   completion code:
+                        * -7    gradient verification failed.
+                                See LSFitSetGradientCheck() for more information.
+                        *  1    relative function improvement is no more than
+                                EpsF.
+                        *  2    relative step is no more than EpsX.
+                        *  4    gradient norm is no more than EpsG
+                        *  5    MaxIts steps was taken
+                        *  7    stopping conditions are too stringent,
+                                further improvement is impossible
+             * 
+             */
+            if (info <= 0) throw new IllConditionedProblemException();
+
+            return new Circle2(new Vector2(c[0], c[1]), radius);
+        }
+
         private static Circle2 FitCircle<T>(IList<T> points, Func<T, double> xSelector, Func<T, double> ySelector, Func<T, double> wSelector)
         {
             var n = points.Count;
@@ -89,6 +162,18 @@ namespace AutomationLibrary.Mathematics.Fitting
             var point = new Vector2(x[0], x[1]);
             func = circle.DistanceFromCircle(point);
         }
+
+        private static alglib.ndimensional_pfunc CreateCircleOfKnownRadiusDistanceFunction(double radius)
+        {
+            return delegate(double[] c, double[] x, ref double func, object obj)
+            {
+                var circle = new Circle2(new Vector2(c[0], c[1]), radius);
+                var point = new Vector2(x[0], x[1]);
+                func = circle.DistanceFromCircle(point);
+            };
+        }
+
+        private delegate void OptimizableFunction(double[] c, double[] x, ref double func, object obj);
 
         public static Line2 FitLine(IList<Vector2> points)
         {
