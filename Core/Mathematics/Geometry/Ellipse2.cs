@@ -65,5 +65,22 @@ namespace AutomationLibrary.Mathematics.Geometry
                 return Math.PI * _semiMajorAxis * _semiMinorAxis;
             }
         }
+
+        public double Circumference
+        {
+            get
+            {
+                // using Ramanujan's approximation
+                // x = (a-b)/(a+b)
+                // C ~= pi * (a+b)(1+3x^2/[10+sqrt(4-3x^2)])
+                var a = _semiMajorAxis;
+                var b = _semiMinorAxis;
+
+                var x = (a - b) / (a + b);
+                var x2 = x * x;
+
+                return Math.PI * (a + b) * (1 + (3 * x2 / (10 + Math.Sqrt(4 - (3 * x2)))));
+            }
+        }
     }
 }
