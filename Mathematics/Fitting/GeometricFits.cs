@@ -97,7 +97,7 @@ namespace AutomationLibrary.Mathematics.Fitting
         private static Circle2 FitCircle<T>(IList<T> points, Func<T, double> xSelector, Func<T, double> ySelector, Func<T, double> wSelector)
         {
             var n = points.Count;
-            if (n < 3) throw new ArgumentException("At least three points are required to fit a circle.");
+            if (n < 3) return null; // At least three points are required to fit a circle
 
             var x = new double[n, 2];
             var y = new double[n];
@@ -153,7 +153,13 @@ namespace AutomationLibrary.Mathematics.Fitting
              */
             if (info <= 0) throw new IllConditionedProblemException();
 
-            return new Circle2(new Vector2(c[0], c[1]), c[2]);
+            var cx = c[0];
+            var cy = c[1];
+            var r = c[2];
+
+            if (r <= 0) throw new IllConditionedProblemException(); // negative radius
+
+            return new Circle2(new Vector2(cx, cy), r);
         }
 
         private static void CircleDistanceFunction(double[] c, double[] x, ref double func, object obj)
