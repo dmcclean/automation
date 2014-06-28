@@ -246,5 +246,191 @@ namespace AutomationLibrary.Mathematics.Fitting
 
             return new Plane3(normal, d);
         }
+
+        public static Ellipse2 FitEllipse(IList<Vector2> points)
+        {
+            int numPoints = points.Count;
+
+            var D1 = new double[numPoints, 3];
+            var D2 = new double[numPoints, 3];
+            var S1 = new double[3, 3];
+            var S2 = new double[3, 3];
+            var S3 = new double[3, 3];
+            var T = new double[3, 3];
+            var M = new double[3, 3];
+            var M2 = new double[3, 3];
+            var C1 = new double[3, 3];
+            var a1 = new double[3, 1];
+            var a2 = new double[3, 1];
+
+            /*
+            Matrix D1 = new Matrix(numPoints, 3);
+            Matrix D2 = new Matrix(numPoints, 3);
+            SquareMatrix S1 = new SquareMatrix(3);
+            SquareMatrix S2 = new SquareMatrix(3);
+            SquareMatrix S3 = new SquareMatrix(3);
+            SquareMatrix T = new SquareMatrix(3);
+            SquareMatrix M = new SquareMatrix(3);
+            SquareMatrix C1 = new SquareMatrix(3);
+            Matrix a1 = new Matrix(3, 1);
+            Matrix a2 = new Matrix(3, 1);
+            Matrix result = new Matrix(6, 1);
+            Matrix temp;
+             */
+
+            C1[0, 0] = 0;
+            C1[0, 1] = 0;
+            C1[0, 2] = 0.5;
+            C1[1, 0] = 0;
+            C1[1, 1] = -1;
+            C1[1, 2] = 0;
+            C1[2, 0] = 0.5;
+            C1[2, 1] = 0;
+            C1[2, 2] = 0;
+
+            //2 D1 = [x .ˆ 2, x .* y, y .ˆ 2]; % quadratic part of the design matrix
+            //3 D2 = [x, y, ones(size(x))]; % linear part of the design matrix
+            for (int xx = 0; xx < points.Count; xx++)
+            {
+                var p = points[xx];
+                D1[xx, 0] = p.X * p.X;
+                D1[xx, 1] = p.X * p.Y;
+                D1[xx, 2] = p.Y * p.Y;
+
+                D2[xx, 0] = p.X;
+                D2[xx, 1] = p.Y;
+                D2[xx, 2] = 1;
+            }
+
+            var opTypeNone = 0;
+            var opTypeTranspose = 1;
+
+            //4 S1 = D1’ * D1; % quadratic part of the scatter matrix
+            //temp = D1.Transpose() * D1;
+            var temp = new double[3, 3];
+            alglib.rmatrixgemm(3, 3, numPoints, 1, D1, 0, 0, opTypeTranspose, D1, 0, 0, opTypeNone, 0, ref temp, 0, 0);
+            for (int xx = 0; xx < 3; xx++)
+                for (int yy = 0; yy < 3; yy++)
+                    S1[xx, yy] = temp[xx, yy];
+
+            //5 S2 = D1’ * D2; % combined part of the scatter matrix
+            //temp = D1.Transpose() * D2;
+            alglib.rmatrixgemm(3, 3, numPoints, 1, D1, 0, 0, opTypeTranspose, D2, 0, 0, opTypeNone, 0, ref temp, 0, 0);
+            for (int xx = 0; xx < 3; xx++)
+                for (int yy = 0; yy < 3; yy++)
+                    S2[xx, yy] = temp[xx, yy];
+
+            //6 S3 = D2’ * D2; % linear part of the scatter matrix
+            //temp = D2.Transpose() * D2;
+            alglib.rmatrixgemm(3, 3, numPoints, 1, D2, 0, 0, opTypeTranspose, D2, 0, 0, opTypeNone, 0, ref temp, 0, 0);
+            for (int xx = 0; xx < 3; xx++)
+                for (int yy = 0; yy < 3; yy++)
+                    S3[xx, yy] = temp[xx, yy];
+
+            //7 T = - inv(S3) * S2’; % for getting a2 from a1
+            // T = -1 * S3.Inverse() * S2.Transpose();
+            int info;
+            alglib.matinvreport report;
+            alglib.rmatrixinverse(ref S3, out info, out report);
+
+            alglib.rmatrixgemm(3, 3, 3, -1, S3, 0, 0, opTypeNone, S2, 0, 0, opTypeTranspose, 0, ref T, 0, 0);
+
+            //8 M = S1 + S2 * T; % reduced scatter matrix
+            // M = S1 + S2 * T;
+            alglib.rmatrixgemm(3, 3, 3, 1, S2, 0, 0, opTypeNone, T, 0, 0, opTypeNone, 0, ref temp, 0, 0);
+            for (int xx = 0; xx < 3; xx++)
+                for (int yy = 0; yy < 3; yy++)
+                    M[xx, yy] = S1[xx, yy] + temp[xx, yy];
+
+            //9 M = [M(3, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span> ./ 2; - M(2, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span>; M(1, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span> ./ 2]; % premultiply by inv(C1)
+            //M2 = C1 * M;
+            alglib.rmatrixgemm(3, 3, 3, 1, C1, 0, 0, opTypeNone, M, 0, 0, opTypeNone, 0, ref M2, 0, 0);
+
+            //10 [evec, eval] = eig(M2); % solve eigensystem
+            //ComplexEigensystem eigenSystem = M2.Eigensystem();
+            const int RightEigenvectorsNeeded = 1;
+            double[] wr, wi;
+            double[,] vl, vr;
+            var converged = alglib.rmatrixevd(M2, 3, RightEigenvectorsNeeded, out wr, out wi, out vl, out vr);
+
+            //11 cond = 4 * evec(1, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span> .* evec(3, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span> - evec(2, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span> .ˆ 2; % evaluate a’Ca
+            //12 a1 = evec(:, find(cond > 0)); % eigenvector for min. pos. eigenvalue
+            //for (int xx = 0; xx < eigenSystem.Dimension; xx++)
+            //{
+            //    Vector<Complex> vector = eigenSystem.Eigenvector(xx);
+            //    Complex condition = 4 * vector[0] * vector[2] - vector[1] * vector[1];
+            //    if (condition.Im == 0 && condition.Re > 0)
+            //    {
+            //        // Solution is found
+            //        Console.WriteLine("\nSolution Found!");
+            //        for (int yy = 0; yy < vector.Count(); yy++)
+            //        {
+            //            Console.Write("{0}, ", vector[yy]);
+            //            a1[yy, 0] = vector[yy].Re;
+            //        }
+            //    }
+            //}
+            for (int xx = 0; xx < wr.Length; xx++)
+            {
+                var vec = vr;
+
+                var condition = 4 * vec[0, xx] * vec[2, xx] - vec[1, xx] * vec[1, xx];
+                if (condition > 0)
+                {
+                    // solution is found
+                    for (int yy = 0; yy < vec.GetLength(1); yy++)
+                    {
+                        a1[yy, 0] = vec[yy, xx];
+                    }
+                }
+            }
+
+            // normalize a1
+            var a1vec = new Vector3(a1[0, 0], a1[1, 0], a1[2, 0]).Normalize();
+            a1[0, 0] = a1vec.X;
+            a1[1, 0] = a1vec.Y;
+            a1[2, 0] = a1vec.Z;
+
+            //13 a2 = T * a1; % ellipse coefficients
+            //a2 = T * a1;
+            alglib.rmatrixgemm(3, 1, 3, 1, T, 0, 0, opTypeNone, a1, 0, 0, opTypeNone, 0, ref a2, 0, 0);
+
+            //14 a = [a1; a2]; % ellipse coefficients
+            var f = new double[6];
+            f[0] = a1[0, 0];
+            f[1] = a1[1, 0];
+            f[2] = a1[2, 0];
+            f[3] = a2[0, 0];
+            f[4] = a2[1, 0];
+            f[5] = a2[2, 0];
+
+            var equation = string.Format("{0:f6} * x^2 + {1:f6} * x * y + {2:f6} * y^2 + {3:f6} * x + {4:f6} * y + {5:f6} = 0", f[0], f[1], f[2], f[3], f[4], f[5]);
+
+            // calculate the ellipse parameters after https://stat.ethz.ch/pipermail/r-help/2010-September/254560.html
+            var b2 = (f[1]*f[1]) / 4;
+            var cx = (f[2] * f[3] / 2 - b2 * f[4]) / (b2 - f[0] * f[2]);
+            var cy = (f[0] * f[4] / 2 - f[1] * f[3] / 4) / (b2 - f[0] * f[2]);
+
+            //num <- 2 * (f[1] * f[5]^2 / 4 + f[3] * f[4]^2 / 4 + f[6] * b2 - f[2]*f[4]*f[5]/4 - f[1]*f[3]*f[6])
+            var num = 2 * (f[0] * f[4] * f[4] / 4 + f[2] * f[3] * f[3] / 4 + f[5] * b2 - f[1] * f[3] * f[4] / 4 - f[0] * f[2] * f[5]);
+
+            //den1 <- (b2 - f[1]*f[3])
+            var den1 = (b2 - f[0] * f[2]);
+            //den2 <- sqrt((f[1] - f[3])^2 + 4*b2)
+            var den2 = Math.Sqrt((f[0] - f[2]) * (f[0] - f[2]) + 4 * b2);
+            //den3 <- f[1] + f[3]
+            var den3 = f[0] + f[2];
+
+            var semiMajor = Math.Sqrt(num / (den1 * (den2 - den3)));
+            var semiMinor = Math.Sqrt(num / (den1 * (-den2 - den3)));
+            
+            // calculate angle of rotation
+            // term <- (f[1] - f[3]) / f[2]
+            var term = (f[0] - f[2]) / f[1];
+            // angle <- atan(1 / term) / 2
+            var angle = Math.Atan(1 / term) / 2;
+
+            return new Ellipse2(new Vector2(cx, cy), semiMajor, semiMinor, angle);
+        }
     }
 }

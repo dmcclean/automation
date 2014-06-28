@@ -15,8 +15,14 @@ namespace AutomationLibrary.Mathematics.Geometry
 
         public Ellipse2(Vector2 center, double semiMajorAxis, double semiMinorAxis, double angle)
         {
-            if (semiMinorAxis <= 0) throw new ArgumentOutOfRangeException();
-            if (semiMajorAxis < semiMinorAxis) throw new ArgumentOutOfRangeException();
+            if (semiMinorAxis <= 0) throw new ArgumentOutOfRangeException("semiMinorAxis");
+            if (semiMajorAxis < semiMinorAxis)
+            {
+                var temp = semiMajorAxis;
+                semiMajorAxis = semiMinorAxis;
+                semiMinorAxis = temp;
+                angle += Math.PI / 2;
+            }
 
             _center = center;
             _semiMajorAxis = semiMajorAxis;

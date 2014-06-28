@@ -16,6 +16,21 @@ namespace TestConsole
         {
             List<Vector2> points = new List<Vector2>();
 
+            using (var reader = System.IO.File.OpenText(@"C:\Users\douglas\desktop\pipe.csv"))
+            {
+                reader.ReadLine(); // skip header
+                while (true)
+                {
+                    var line = reader.ReadLine();
+                    if (line == null) break;
+                    var nums = line.Split(',');
+                    var values = nums.Select(n => double.Parse(n)).ToArray();
+                    points.Add(new Vector2(values[0], values[1]));
+                }
+            }
+
+            var ellipse = AutomationLibrary.Mathematics.Fitting.GeometricFits.FitEllipse(points);
+
 
             points.Clear();
             points.AddRange(GeneratePointsOnEllipticalArc(new Vector2(0.37, -2.4), 21, 24.26, 96.3 * Math.PI / 180.0, .020, -95.0 * Math.PI / 180.0, 97.0 * Math.PI / 180.0).Take(1000));
