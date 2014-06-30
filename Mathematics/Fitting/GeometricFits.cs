@@ -164,9 +164,20 @@ namespace AutomationLibrary.Mathematics.Fitting
 
         private static void CircleDistanceFunction(double[] c, double[] x, ref double func, object obj)
         {
-            var circle = new Circle2(new Vector2(c[0], c[1]), c[2]);
-            var point = new Vector2(x[0], x[1]);
-            func = circle.DistanceFromCircle(point);
+            var cx = c[0];
+            var cy = c[1];
+            var r = c[2];
+
+            if (r < 0)
+            {
+                func = double.PositiveInfinity; // negative radius
+            }
+            else
+            {
+                var circle = new Circle2(new Vector2(c[0], c[1]), c[2]);
+                var point = new Vector2(x[0], x[1]);
+                func = circle.DistanceFromCircle(point);
+            }
         }
 
         private static alglib.ndimensional_pfunc CreateCircleOfKnownRadiusDistanceFunction(double radius)
@@ -268,21 +279,6 @@ namespace AutomationLibrary.Mathematics.Fitting
             var C1 = new double[3, 3];
             var a1 = new double[3, 1];
             var a2 = new double[3, 1];
-
-            /*
-            Matrix D1 = new Matrix(numPoints, 3);
-            Matrix D2 = new Matrix(numPoints, 3);
-            SquareMatrix S1 = new SquareMatrix(3);
-            SquareMatrix S2 = new SquareMatrix(3);
-            SquareMatrix S3 = new SquareMatrix(3);
-            SquareMatrix T = new SquareMatrix(3);
-            SquareMatrix M = new SquareMatrix(3);
-            SquareMatrix C1 = new SquareMatrix(3);
-            Matrix a1 = new Matrix(3, 1);
-            Matrix a2 = new Matrix(3, 1);
-            Matrix result = new Matrix(6, 1);
-            Matrix temp;
-             */
 
             C1[0, 0] = 0;
             C1[0, 1] = 0;
@@ -435,6 +431,8 @@ namespace AutomationLibrary.Mathematics.Fitting
             var term = (f[0] - f[2]) / f[1];
             // angle <- atan(1 / term) / 2
             var angle = Math.Atan(1 / term) / 2;
+
+            if (double.IsNaN(cx) || double.IsNaN(cy) || double.IsNaN(semiMajor) || double.IsNaN(semiMinor) || double.IsNaN(angle)) return null;
 
             return new Ellipse2(new Vector2(cx, cy), semiMajor, semiMinor, angle);
         }
