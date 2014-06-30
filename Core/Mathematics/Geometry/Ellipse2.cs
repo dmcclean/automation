@@ -56,6 +56,8 @@ namespace AutomationLibrary.Mathematics.Geometry
         public double MinorAxisLength { get { return 2 * _semiMinorAxis; } }
         public double DistanceBetweenFoci { get { return 2 * FocalDistance; } }
 
+        public double AngleOfMajorAxis { get { return _angleOfSemiMajorAxis; } }
+
         public double Eccentricity
         {
             get
