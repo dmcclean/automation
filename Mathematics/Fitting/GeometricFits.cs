@@ -372,13 +372,16 @@ namespace AutomationLibrary.Mathematics.Fitting
             //        }
             //    }
             //}
+            var incumbentCondition = double.PositiveInfinity;
             for (int xx = 0; xx < wr.Length; xx++)
             {
                 var vec = vr;
 
                 var condition = 4 * vec[0, xx] * vec[2, xx] - vec[1, xx] * vec[1, xx];
-                if (condition > 0)
+                if (condition > 0 && condition < incumbentCondition)
                 {
+                    incumbentCondition = condition;
+
                     // solution is found
                     for (int yy = 0; yy < vec.GetLength(1); yy++)
                     {
@@ -386,6 +389,8 @@ namespace AutomationLibrary.Mathematics.Fitting
                     }
                 }
             }
+
+            if (double.IsInfinity(incumbentCondition)) return null; // no solution found
 
             // normalize a1
             var a1vec = new Vector3(a1[0, 0], a1[1, 0], a1[2, 0]).Normalize();
