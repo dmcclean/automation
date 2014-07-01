@@ -180,6 +180,14 @@ namespace Interop.Acuity.Profile
             }
         }
 
+        public byte ImageNumber
+        {
+            get
+            {
+                return _firstImageNumber;
+            }
+        }
+
         public bool IsInterleaved
         {
             get
