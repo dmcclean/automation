@@ -438,6 +438,7 @@ namespace AutomationLibrary.Mathematics.Fitting
             var angle = Math.Atan(1 / term) / 2;
 
             if (double.IsNaN(cx) || double.IsNaN(cy) || double.IsNaN(semiMajor) || double.IsNaN(semiMinor) || double.IsNaN(angle)) return null;
+            if (semiMinor == 0 || semiMajor == 0) return null;
 
             // convert angle to our convention
             angle += Math.PI / 2;
