@@ -266,6 +266,8 @@ namespace AutomationLibrary.Mathematics.Fitting
 
         public static Ellipse2 FitEllipse(IList<Vector2> points)
         {
+            // translation of http://www.r-bloggers.com/fitting-an-ellipse-to-point-data/
+
             int numPoints = points.Count;
 
             var D1 = new double[numPoints, 3];
@@ -290,8 +292,8 @@ namespace AutomationLibrary.Mathematics.Fitting
             C1[2, 1] = 0;
             C1[2, 2] = 0;
 
-            //2 D1 = [x .ˆ 2, x .* y, y .ˆ 2]; % quadratic part of the design matrix
-            //3 D2 = [x, y, ones(size(x))]; % linear part of the design matrix
+            // D1 <- cbind(dat$x * dat$x, dat$x * dat$y, dat$y * dat$y) 
+            // D2 <- cbind(dat$x, dat$y, 1) 
             for (int xx = 0; xx < points.Count; xx++)
             {
                 var p = points[xx];
@@ -307,29 +309,26 @@ namespace AutomationLibrary.Mathematics.Fitting
             var opTypeNone = 0;
             var opTypeTranspose = 1;
 
-            //4 S1 = D1’ * D1; % quadratic part of the scatter matrix
-            //temp = D1.Transpose() * D1;
+            //  S1 <- t(D1) %*% D1 
             var temp = new double[3, 3];
             alglib.rmatrixgemm(3, 3, numPoints, 1, D1, 0, 0, opTypeTranspose, D1, 0, 0, opTypeNone, 0, ref temp, 0, 0);
             for (int xx = 0; xx < 3; xx++)
                 for (int yy = 0; yy < 3; yy++)
                     S1[xx, yy] = temp[xx, yy];
 
-            //5 S2 = D1’ * D2; % combined part of the scatter matrix
-            //temp = D1.Transpose() * D2;
+            // S2 <- t(D1) %*% D2
             alglib.rmatrixgemm(3, 3, numPoints, 1, D1, 0, 0, opTypeTranspose, D2, 0, 0, opTypeNone, 0, ref temp, 0, 0);
             for (int xx = 0; xx < 3; xx++)
                 for (int yy = 0; yy < 3; yy++)
                     S2[xx, yy] = temp[xx, yy];
 
-            //6 S3 = D2’ * D2; % linear part of the scatter matrix
-            //temp = D2.Transpose() * D2;
+            // S3 <- t(D2) %*% D2
             alglib.rmatrixgemm(3, 3, numPoints, 1, D2, 0, 0, opTypeTranspose, D2, 0, 0, opTypeNone, 0, ref temp, 0, 0);
             for (int xx = 0; xx < 3; xx++)
                 for (int yy = 0; yy < 3; yy++)
                     S3[xx, yy] = temp[xx, yy];
 
-            //7 T = - inv(S3) * S2’; % for getting a2 from a1
+            // T <- -solve(S3) %*% t(S2)
             // T = -1 * S3.Inverse() * S2.Transpose();
             int info;
             alglib.matinvreport report;
@@ -337,41 +336,23 @@ namespace AutomationLibrary.Mathematics.Fitting
 
             alglib.rmatrixgemm(3, 3, 3, -1, S3, 0, 0, opTypeNone, S2, 0, 0, opTypeTranspose, 0, ref T, 0, 0);
 
-            //8 M = S1 + S2 * T; % reduced scatter matrix
-            // M = S1 + S2 * T;
+            // M <- S1 + S2 %*% T 
             alglib.rmatrixgemm(3, 3, 3, 1, S2, 0, 0, opTypeNone, T, 0, 0, opTypeNone, 0, ref temp, 0, 0);
             for (int xx = 0; xx < 3; xx++)
                 for (int yy = 0; yy < 3; yy++)
                     M[xx, yy] = S1[xx, yy] + temp[xx, yy];
 
-            //9 M = [M(3, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span> ./ 2; - M(2, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span>; M(1, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span> ./ 2]; % premultiply by inv(C1)
-            //M2 = C1 * M;
+            // M <- rbind(M[3,] / 2, -M[2,], M[1,] / 2) 
             alglib.rmatrixgemm(3, 3, 3, 1, C1, 0, 0, opTypeNone, M, 0, 0, opTypeNone, 0, ref M2, 0, 0);
 
-            //10 [evec, eval] = eig(M2); % solve eigensystem
-            //ComplexEigensystem eigenSystem = M2.Eigensystem();
+            // evec <- eigen(M)$vec
+            // but our variable is actually named vr
             const int RightEigenvectorsNeeded = 1;
             double[] wr, wi;
             double[,] vl, vr;
             var converged = alglib.rmatrixevd(M2, 3, RightEigenvectorsNeeded, out wr, out wi, out vl, out vr);
 
-            //11 cond = 4 * evec(1, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span> .* evec(3, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span> - evec(2, <span class="wp-smiley emoji emoji-smile" title=":)">:)</span> .ˆ 2; % evaluate a’Ca
-            //12 a1 = evec(:, find(cond > 0)); % eigenvector for min. pos. eigenvalue
-            //for (int xx = 0; xx < eigenSystem.Dimension; xx++)
-            //{
-            //    Vector<Complex> vector = eigenSystem.Eigenvector(xx);
-            //    Complex condition = 4 * vector[0] * vector[2] - vector[1] * vector[1];
-            //    if (condition.Im == 0 && condition.Re > 0)
-            //    {
-            //        // Solution is found
-            //        Console.WriteLine("\nSolution Found!");
-            //        for (int yy = 0; yy < vector.Count(); yy++)
-            //        {
-            //            Console.Write("{0}, ", vector[yy]);
-            //            a1[yy, 0] = vector[yy].Re;
-            //        }
-            //    }
-            //}
+            // pick out the solution with the lowest positive condition number
             var incumbentCondition = double.PositiveInfinity;
             for (int xx = 0; xx < wr.Length; xx++)
             {
@@ -413,10 +394,45 @@ namespace AutomationLibrary.Mathematics.Fitting
 
             var equation = string.Format("{0:f6} * x^2 + {1:f6} * x * y + {2:f6} * y^2 + {3:f6} * x + {4:f6} * y + {5:f6} = 0", f[0], f[1], f[2], f[3], f[4], f[5]);
 
-            // calculate the ellipse parameters after https://stat.ethz.ch/pipermail/r-help/2010-September/254560.html
-            var b2 = (f[1]*f[1]) / 4;
-            var cx = (f[2] * f[3] / 2 - b2 * f[4]) / (b2 - f[0] * f[2]);
-            var cy = (f[0] * f[4] / 2 - f[1] * f[3] / 4) / (b2 - f[0] * f[2]);
+            // calculate the center and lengths of the semi-axes 
+            // see http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2288654/
+            // J. R. Minter
+            // for the center, linear algebra to the rescue
+            // center is the solution to the pair of equations
+            // 2ax +  by + d = 0
+            // bx  + 2cy + e = 0
+            // or
+            // | 2a   b |   |x|   |-d|
+            // |  b  2c | * |y| = |-e|
+            // or
+            // A x = b
+            // or
+            // x = Ainv b
+            // or
+            // x = solve(A) %*% b
+            // A <- matrix(c(2*f[1], f[2], f[2], 2*f[3]), nrow=2, ncol=2, byrow=T )
+            var A = new double[2, 2];
+            A[0, 0] = 2 * f[0];
+            A[0, 1] = f[1];
+            A[1, 0] = f[1];
+            A[1, 1] = 2 * f[2];
+
+            // b <- matrix(c(-f[4], -f[5]), nrow=2, ncol=1, byrow=T)
+            var b = new double[2, 1];
+            b[0, 0] = -f[3];
+            b[1, 0] = -f[4];
+
+            // soln <- solve(A) %*% b
+            var soln = new double[2, 1];
+            alglib.rmatrixinverse(ref A, out info, out report);
+            alglib.rmatrixgemm(2, 1, 2, 1, A, 0, 0, opTypeNone, b, 0, 0, opTypeNone, 0, ref soln, 0, 0);
+
+            // b2 <- f[2]^2 / 4
+            var b2 = f[1] * f[1] / 4;
+
+            // center <- c(soln[1], soln[2]) 
+            var cx = soln[0, 0];
+            var cy = soln[1, 0];
 
             //num <- 2 * (f[1] * f[5]^2 / 4 + f[3] * f[4]^2 / 4 + f[6] * b2 - f[2]*f[4]*f[5]/4 - f[1]*f[3]*f[6])
             var num = 2 * (f[0] * f[4] * f[4] / 4 + f[2] * f[3] * f[3] / 4 + f[5] * b2 - f[1] * f[3] * f[4] / 4 - f[0] * f[2] * f[5]);
