@@ -43,8 +43,8 @@ namespace AutomationLibrary.Mathematics.Transforms
 
         public static AffineTransform2 Compose(AffineTransform2 first, AffineTransform2 second)
         {
-            var a = second;
-            var b = first;
+            var a = first;
+            var b = second;
             
             var x11 = b._x11 * a._x11 + b._x12 * a._x21 + b._x13 * 0;
             var x12 = b._x11 * a._x12 + b._x12 * a._x22 + b._x13 * 0;
