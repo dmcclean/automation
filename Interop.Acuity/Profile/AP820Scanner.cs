@@ -228,6 +228,13 @@ namespace Interop.Acuity.Profile
             WriteData(message);
         }
 
+        public void SetSynchronizationMode(SynchronizationMode mode)
+        {
+            var message = ConstructMessage(15, (int)mode);
+
+            WriteData(message);
+        }
+
         #endregion
 
         #region Configuration Helpers

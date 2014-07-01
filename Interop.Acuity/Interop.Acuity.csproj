@@ -50,6 +50,7 @@
     <Compile Include="Profile\NativeMethods.cs" />
     <Compile Include="Profile\ScannerInformation.cs" />
     <Compile Include="Profile\ScanResult.cs" />
+    <Compile Include="Profile\SynchronizationMode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
