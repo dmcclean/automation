@@ -82,6 +82,7 @@
     <Compile Include="Mathematics\PiecewiseFunction.cs" />
     <Compile Include="Mathematics\RationalFunction.cs" />
     <Compile Include="Mathematics\RationalFunctionForm.cs" />
+    <Compile Include="Mathematics\Transforms\AffineTransform2.cs" />
     <Compile Include="Mathematics\Vector2F.cs" />
     <Compile Include="Mathematics\Vector3.cs" />
     <Compile Include="Mathematics\Vector3F.cs" />
