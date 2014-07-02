@@ -7,6 +7,19 @@ namespace AutomationLibrary.Collections
 {
     public static class CollectionExtensions
     {
+        public static void Swap<T>(ref T a, ref T b)
+        {
+            var temp = a;
+            a = b;
+            b = temp;
+        }
+
+        public static void PlaceInAscendingOrder<T>(ref T a, ref T b)
+            where T : IComparable<T>
+        {
+            if (b.CompareTo(a) < 0) Swap<T>(ref a, ref b);
+        }
+
         public static IEnumerable<T> FilterMonotonicallyIncreasing<T>(this IEnumerable<T> items)
             where T : IComparable<T>
         {
