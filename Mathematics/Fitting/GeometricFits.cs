@@ -456,9 +456,6 @@ namespace AutomationLibrary.Mathematics.Fitting
             if (double.IsNaN(cx) || double.IsNaN(cy) || double.IsNaN(semiMajor) || double.IsNaN(semiMinor) || double.IsNaN(angle)) return null;
             if (semiMinor == 0 || semiMajor == 0) return null;
 
-            // convert angle to our convention
-            angle += Math.PI / 2;
-
             return new Ellipse2(new Vector2(cx, cy), semiMajor, semiMinor, angle);
         }
     }
