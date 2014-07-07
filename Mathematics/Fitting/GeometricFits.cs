@@ -453,7 +453,7 @@ namespace AutomationLibrary.Mathematics.Fitting
             // angle <- atan(1 / term) / 2
             var angle = Math.Atan(1 / term) / 2;
 
-            if (f[1] < 0) angle += Math.PI / 2;
+            if (f[2] < f[0]) angle += Math.PI / 2;
 
             if (double.IsNaN(cx) || double.IsNaN(cy) || double.IsNaN(semiMajor) || double.IsNaN(semiMinor) || double.IsNaN(angle)) return null;
             if (semiMinor == 0 || semiMajor == 0) return null;
