@@ -34,7 +34,7 @@ namespace AutomationLibrary.Mathematics.Fitting
         private static Circle2 FitCircleOfKnownRadius<T>(double radius, IList<T> points, Func<T, double> xSelector, Func<T, double> ySelector, Func<T, double> wSelector)
         {
             var n = points.Count;
-            if (n < 3) throw new ArgumentException("At least three points are required to fit a circle.");
+            if (n < 3) return null; // At least three points are required to fit a circle.
 
             var x = new double[n, 2];
             var y = new double[n];

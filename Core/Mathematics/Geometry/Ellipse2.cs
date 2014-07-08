@@ -90,5 +90,21 @@ namespace AutomationLibrary.Mathematics.Geometry
                 return Math.PI * (a + b) * (1 + (3 * x2 / (10 + Math.Sqrt(4 - (3 * x2)))));
             }
         }
+
+        public double EffectiveRadiusAtAngularPosition(double angleRadians)
+        {
+            // http://en.wikipedia.org/wiki/Ellipse#Polar_form_relative_to_center
+            var theta = angleRadians - _angleOfSemiMajorAxis;
+            
+            var a = _semiMajorAxis;
+            var b = _semiMinorAxis;
+            
+            var num = a * b;
+            var bTerm = b * Math.Cos(theta);
+            var aTerm = a * Math.Sin(theta);
+            var denom = Math.Sqrt(bTerm * bTerm + aTerm * aTerm);
+
+            return num / denom;
+        }
     }
 }
