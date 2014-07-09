@@ -91,6 +91,33 @@ namespace AutomationLibrary.Mathematics.Geometry
             }
         }
 
+        public Vector2 PointAtAngularPosition(double angleRadians)
+        {
+            var effectiveRadius = EffectiveRadiusAtAngularPosition(angleRadians);
+            var offset = Vector2.FromRadiusAndAngle(effectiveRadius, angleRadians);
+
+            return _center + offset;
+        }
+
+        public Vector2 NearestPointOfApproach(Line2 line)
+        {
+            Vector2 incumbent = _center;
+            double incumbentDistance = double.MaxValue;
+
+            for (var theta = 0.0; theta <= 2 * Math.PI; theta += .001)
+            {
+                var candidate = PointAtAngularPosition(theta);
+                var distance = line.DistanceFromLine(candidate);
+                if (distance < incumbentDistance)
+                {
+                    incumbent = candidate;
+                    incumbentDistance = distance;
+                }
+            }
+
+            return incumbent;
+        }
+
         public double EffectiveRadiusAtAngularPosition(double angleRadians)
         {
             // http://en.wikipedia.org/wiki/Ellipse#Polar_form_relative_to_center

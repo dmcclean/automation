@@ -24,7 +24,7 @@ namespace AutomationLibrary.Mathematics.Geometry
             Vector2 dir = new Vector2(a, b);
             Vector2 normal;
             if (!dir.TryNormalize(out normal)) throw new IllConditionedProblemException();
-            var signedDistanceFromOrigin = c / dir.Length; // we need to normalize the c coefficient as we did with a,b
+            var signedDistanceFromOrigin = -c / dir.Length; // we need to normalize the c coefficient as we did with a,b
 
             return new Line2(normal, signedDistanceFromOrigin);
         }
@@ -53,13 +53,14 @@ namespace AutomationLibrary.Mathematics.Geometry
             return FromPointAndDirection(a, offset);
         }
 
+        public Vector2 Direction { get { return _normal.Rotate90Negative().Normalize(); } }
         public Vector2 Normal { get { return _normal; } }
         public double Slope { get { return -_normal.X / _normal.Y; } }
         public double Intercept { get { return _signedDistanceFromOrigin / _normal.Y; } }
 
         public double SignedDistanceFromLine(Vector2 point)
         {
-            return Vector2.DotProduct(_normal, point) + _signedDistanceFromOrigin;
+            return Vector2.DotProduct(_normal, point) - _signedDistanceFromOrigin;
         }
 
         public double DistanceFromLine(Vector2 point)
@@ -70,6 +71,13 @@ namespace AutomationLibrary.Mathematics.Geometry
         public Line2 FlipNormal()
         {
             return new Line2(-_normal, -_signedDistanceFromOrigin);
+        }
+
+        public Vector2 Projection(Vector2 point)
+        {
+            var dist = SignedDistanceFromLine(point);
+
+            return point - (dist * _normal);
         }
 
         public static Vector2? Intersection(Line2 a, Line2 b)
