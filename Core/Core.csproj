@@ -71,6 +71,7 @@
     <Compile Include="Controllers\WrappedVariable`2.cs" />
     <Compile Include="Concurrency\ILatch.cs" />
     <Compile Include="Mathematics\ExtrapolationBehavior.cs" />
+    <Compile Include="Mathematics\Fitting\IRationalFunctionFitter.cs" />
     <Compile Include="Mathematics\Geometry\Circle2.cs" />
     <Compile Include="Mathematics\Geometry\Ellipse2.cs" />
     <Compile Include="Mathematics\Geometry\Line2.cs" />

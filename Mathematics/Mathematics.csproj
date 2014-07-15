@@ -41,10 +41,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AlgLibHelpers.cs" />
+    <Compile Include="Curves\CircularFunction.cs" />
     <Compile Include="Curves\Polyline.cs" />
     <Compile Include="Fitting\FloaterHormannRationalFunctionFitter.cs" />
     <Compile Include="Fitting\GeometricFits.cs" />
-    <Compile Include="Fitting\IRationalFunctionFitter.cs" />
     <Compile Include="Fitting\PolynomialFunctionFitter.cs" />
     <Compile Include="Geometry\Voronoi\VoronoiDiagram.cs" />
     <Compile Include="Geometry\Voronoi\VoronoiEdge.cs" />

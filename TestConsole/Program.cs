@@ -31,6 +31,9 @@ namespace TestConsole
 
             var ellipse = AutomationLibrary.Mathematics.Fitting.GeometricFits.FitEllipse(points);
 
+            var ellipseFunc = AutomationLibrary.Mathematics.Curves.CircularFunction.FromCartesianPoints(ellipse.Center, points);
+            var smoothEllipseFunc = ellipseFunc.SavitzkyGolaySmooth(3, 21);
+
 
             points.Clear();
             points.AddRange(GeneratePointsOnEllipticalArc(new Vector2(0.37, -2.4), 21, 24.26, 96.3 * Math.PI / 180.0, .020, -95.0 * Math.PI / 180.0, 97.0 * Math.PI / 180.0).Take(1000));
