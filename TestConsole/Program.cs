@@ -14,6 +14,9 @@ namespace TestConsole
     {
         static void Main(string[] args)
         {
+            var line3 = Line3.FromPointAndDirection(new Vector3(0.5, 0.5, 0.5), new Vector3(1, 1, 1));
+            var nearest = line3.GetClosestPoint(new Vector3(27, -1.4, 19));
+
             List<Vector2> points = new List<Vector2>();
 
             using (var reader = System.IO.File.OpenText(@"C:\Users\douglas\desktop\pipe.csv"))
