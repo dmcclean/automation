@@ -14,6 +14,12 @@ namespace TestConsole
     {
         static void Main(string[] args)
         {
+            List<Vector3> p3 = new List<Vector3>();
+            p3.Add(new Vector3(1.1, 0.9, 1.0));
+            p3.Add(new Vector3(6.9, 7.1, 7.0));
+
+            var line3fit = AutomationLibrary.Mathematics.Fitting.GeometricFits.FitLine(p3);
+
             var line3 = Line3.FromPointAndDirection(new Vector3(0.5, 0.5, 0.5), new Vector3(1, 1, 1));
             var nearest = line3.GetClosestPoint(new Vector3(27, -1.4, 19));
 

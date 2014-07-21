@@ -214,17 +214,50 @@ namespace AutomationLibrary.Mathematics.Fitting
             alglib.rmatrixsvd(x, n, 2, uNeeded, vtNeeded, extraMemoryAllowedSetting, out w, out u, out vt);
 
 
-            // because alglib.rmatrixsvd promises to return singular values, w, in descending order, we can be sure that w[1] is the least
-            const int IndexOfLeastSingularValue = 1;
+            // because alglib.rmatrixsvd promises to return singular values, w, in descending order, we can be sure that w[0] is the greatest
+            const int IndexOfGreatestSingularValue = 0;
 
-            var a = vt[IndexOfLeastSingularValue, 0];
-            var b = vt[IndexOfLeastSingularValue, 1];
+            var a = vt[IndexOfGreatestSingularValue, 0];
+            var b = vt[IndexOfGreatestSingularValue, 1];
 
-            var normal = new Vector2(a, b);
+            var direction = new Vector2(a, b);
 
-            var c = Vector2.DotProduct(centroid, normal);
+            return Line2.FromPointAndDirection(centroid, direction);
+        }
 
-            return new Line2(normal, c);
+        public static Line3 FitLine(IList<Vector3> points)
+        {
+            var n = points.Count;
+            if (n < 2) throw new ArgumentException("At least two points are required to fit a line.");
+
+            var x = new double[n, 3];
+            var centroid = Vector3.Centroid(points);
+
+            for (int i = 0; i < n; i++)
+            {
+                x[i, 0] = points[i].X - centroid.X;
+                x[i, 1] = points[i].Y - centroid.Y;
+                x[i, 2] = points[i].Y - centroid.Z;
+            }
+
+            double[] w;
+            double[,] u, vt;
+            const int uNeeded = 0; // don't need left singular vectors
+            const int vtNeeded = 1; // need first set of right singular vectors
+            const int extraMemoryAllowedSetting = 2; // it's ok to use more memory for performance
+            alglib.rmatrixsvd(x, n, 3, uNeeded, vtNeeded, extraMemoryAllowedSetting, out w, out u, out vt);
+
+
+            // because alglib.rmatrixsvd promises to return singular values, w, in descending order, we can be sure that w[0] is the greatest
+            const int IndexOfGreatestSingularValue = 0;
+
+            var a = vt[IndexOfGreatestSingularValue, 0];
+            var b = vt[IndexOfGreatestSingularValue, 1];
+            var c = vt[IndexOfGreatestSingularValue, 2];
+
+            var direction = new Vector3(a, b, c);
+
+            return Line3.FromPointAndDirection(centroid, direction);
         }
 
         public static Plane3 FitPlane(IList<Vector3> points)
