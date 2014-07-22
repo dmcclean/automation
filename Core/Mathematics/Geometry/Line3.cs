@@ -49,9 +49,31 @@ namespace AutomationLibrary.Mathematics.Geometry
             }
         }
 
-        public Vector3 PiercePointOnPlane(Plane3 plane)
+        public Vector3 PointNearestOrigin
         {
-            throw new NotImplementedException();
+            get
+            {
+                return _point;
+            }
+        }
+
+        public Vector3? PiercePointOnPlane(Plane3 plane)
+        {
+            // cribbed from http://stackoverflow.com/questions/5666222/3d-line-plane-intersection
+            var u = this.Direction;
+            var w = this.PointNearestOrigin - plane.PointNearestOrigin;
+            var dot = Vector3.DotProduct(plane.Normal, u);
+
+            const double epsilon = 1e-6;
+
+            if (Math.Abs(dot) > epsilon)
+            {
+                var t = -Vector3.DotProduct(plane.Normal, w) / dot;
+                var delta = u * t;
+
+                return this.PointNearestOrigin + delta;
+            }
+            else return null;
         }
     }
 }

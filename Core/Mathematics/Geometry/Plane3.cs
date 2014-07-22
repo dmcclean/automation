@@ -19,6 +19,10 @@ namespace AutomationLibrary.Mathematics.Geometry
             _signedDistanceFromOrigin = signedDistanceFromOrigin;
         }
 
+        public static readonly Plane3 XY = new Plane3(Vector3.UnitZ, 0);
+        public static readonly Plane3 XZ = new Plane3(Vector3.UnitY, 0);
+        public static readonly Plane3 YZ = new Plane3(Vector3.UnitX, 0);
+
         public static Plane3 FromCoefficientsOfStandardForm(double a, double b, double c, double d)
         {
             Vector3 dir = new Vector3(a, b, c);
@@ -40,6 +44,8 @@ namespace AutomationLibrary.Mathematics.Geometry
         }
 
         public Vector3 Normal { get { return _normal; } }
+
+        public Vector3 PointNearestOrigin { get { return _normal * _signedDistanceFromOrigin; } }
 
         public double SignedDistanceFromPlane(Vector3 point)
         {
