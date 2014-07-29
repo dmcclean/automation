@@ -237,7 +237,7 @@ namespace AutomationLibrary.Mathematics.Fitting
             {
                 x[i, 0] = points[i].X - centroid.X;
                 x[i, 1] = points[i].Y - centroid.Y;
-                x[i, 2] = points[i].Y - centroid.Z;
+                x[i, 2] = points[i].Z - centroid.Z;
             }
 
             double[] w;
