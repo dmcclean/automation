@@ -82,6 +82,7 @@
     <Compile Include="Mathematics\IllConditionedProblemException.cs" />
     <Compile Include="Mathematics\InterpolationBehavior.cs" />
     <Compile Include="Mathematics\PiecewiseFunction.cs" />
+    <Compile Include="Mathematics\Quaternion.cs" />
     <Compile Include="Mathematics\RationalFunction.cs" />
     <Compile Include="Mathematics\RationalFunctionForm.cs" />
     <Compile Include="Mathematics\Transforms\AffineTransform2.cs" />
