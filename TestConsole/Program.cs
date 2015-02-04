@@ -14,6 +14,68 @@ namespace TestConsole
     {
         static void Main(string[] args)
         {
+            TestEclipsePipe();
+        }
+
+        static void TestEclipsePipe()
+        {
+            using(var reader = System.IO.File.OpenText(@"M:\Eclipse\Test Runs\data_3.dat"))
+            {
+                for (int i = 0; i < 8; i++)
+                    reader.ReadLine(); // skip header
+
+                var polarPoints = new List<Vector2>();
+                while(true)
+                {
+                    var line = reader.ReadLine();
+                    if (line == null) break;
+                    var nums = line.Split('\t');
+                    var laser = double.Parse(nums[1]);
+                    var encoder = (int)double.Parse(nums[2]);
+
+                    const int EncoderPPR = 4000; // encoder PPR is 1000, but it is a 4x subsampling quadrature encoder
+
+                    if (encoder < 32000) encoder -= 65536;  // to allow for rotating wrong way, move things first to account for counter rollover
+                    encoder %= EncoderPPR;
+                    if (encoder < 0) encoder += EncoderPPR;
+
+                    var theta = 2 * Math.PI * encoder / EncoderPPR;
+
+                    // const double LaserVoltageAtEdgeOfHolder = 1.3612; as measured by 1-2-3 block method
+                    const double LaserVoltageAtEdgeOfHolder = 1.37; // as empirically derived by assuming theoretical scale factor and pipe size
+                    const double LaserScaleFactorInchesPerVolt = 12.0 / 10.0; // theoretical scale factor from datasheet
+                    const double LaserHolderHalfWidth = 2.3125; // theoretical from drawing, part measures perfectly for width
+
+                    var r = ((laser - LaserVoltageAtEdgeOfHolder) * LaserScaleFactorInchesPerVolt) + LaserHolderHalfWidth;
+
+                    polarPoints.Add(new Vector2(theta, r));
+                }
+
+                var cartesianPoints = new List<Vector2>(polarPoints.Count);
+                foreach (var polar in polarPoints)
+                    cartesianPoints.Add(new Vector2(polar.Y * Math.Cos(polar.X), polar.Y * Math.Sin(polar.X)));
+
+                var circle = GeometricFits.FitCircle(cartesianPoints);
+
+                Console.WriteLine("Radius: {0:f3}", circle.Radius);
+                Console.WriteLine("Diameter: {0:f3}", circle.Diameter);
+                Console.WriteLine("Center X: {0:f3}", circle.Center.X);
+                Console.WriteLine("Center Y: {0:f3}", circle.Center.Y);
+                Console.WriteLine("Center Offset: {0:f3}", circle.Center.Length);
+                Console.ReadLine();
+
+                var ellipse = GeometricFits.FitEllipse(cartesianPoints);
+
+                Console.WriteLine("Elliptical Major Diameter: {0:f3}", ellipse.MajorAxisLength);
+                Console.WriteLine("Elliptical Minor Diameter: {0:f3}", ellipse.MinorAxisLength);
+                Console.WriteLine("Elliptical Eccentricity: {0:f4}", ellipse.Eccentricity);
+
+                Console.ReadLine();
+            }
+        }
+
+        static void ClowWater() 
+        {
             List<Vector3> p3 = new List<Vector3>();
             p3.Add(new Vector3(1.1, 0.9, 1.0));
             p3.Add(new Vector3(6.9, 7.1, 7.0));
