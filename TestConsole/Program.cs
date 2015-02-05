@@ -19,7 +19,7 @@ namespace TestConsole
 
         static void TestEclipsePipe()
         {
-            using(var reader = System.IO.File.OpenText(@"M:\Eclipse\Test Runs\data_3.dat"))
+            using(var reader = System.IO.File.OpenText(@"M:\Superior Energy\Test Runs\data_4.dat"))
             {
                 for (int i = 0; i < 8; i++)
                     reader.ReadLine(); // skip header
@@ -35,14 +35,14 @@ namespace TestConsole
 
                     const int EncoderPPR = 4000; // encoder PPR is 1000, but it is a 4x subsampling quadrature encoder
 
-                    if (encoder < 32000) encoder -= 65536;  // to allow for rotating wrong way, move things first to account for counter rollover
+                    if (encoder < 32000) encoder += 65536;  // to allow for rotating wrong way, move things first to account for counter rollover
                     encoder %= EncoderPPR;
                     if (encoder < 0) encoder += EncoderPPR;
 
-                    var theta = 2 * Math.PI * encoder / EncoderPPR;
+                    var theta = (2 * Math.PI * encoder) / EncoderPPR;
 
-                    // const double LaserVoltageAtEdgeOfHolder = 1.3612; as measured by 1-2-3 block method
-                    const double LaserVoltageAtEdgeOfHolder = 1.37; // as empirically derived by assuming theoretical scale factor and pipe size
+                    //const double LaserVoltageAtEdgeOfHolder = 1.3612; // as measured by 1-2-3 block method
+                    const double LaserVoltageAtEdgeOfHolder = 1.381; // as empirically derived by assuming theoretical scale factor and pipe size
                     const double LaserScaleFactorInchesPerVolt = 12.0 / 10.0; // theoretical scale factor from datasheet
                     const double LaserHolderHalfWidth = 2.3125; // theoretical from drawing, part measures perfectly for width
 
@@ -57,12 +57,15 @@ namespace TestConsole
 
                 var circle = GeometricFits.FitCircle(cartesianPoints);
 
+                Console.WriteLine("Point Count: {0}", cartesianPoints.Count);
+                Console.WriteLine();
+
                 Console.WriteLine("Radius: {0:f3}", circle.Radius);
                 Console.WriteLine("Diameter: {0:f3}", circle.Diameter);
                 Console.WriteLine("Center X: {0:f3}", circle.Center.X);
                 Console.WriteLine("Center Y: {0:f3}", circle.Center.Y);
                 Console.WriteLine("Center Offset: {0:f3}", circle.Center.Length);
-                Console.ReadLine();
+                Console.WriteLine();
 
                 var ellipse = GeometricFits.FitEllipse(cartesianPoints);
 
@@ -71,6 +74,42 @@ namespace TestConsole
                 Console.WriteLine("Elliptical Eccentricity: {0:f4}", ellipse.Eccentricity);
 
                 Console.ReadLine();
+
+                var censoredCenteredCartesian = new List<Vector2>();
+                foreach(var point in cartesianPoints)
+                {
+                    var centered = point - circle.Center;
+                    if (centered.Length > 2.95) censoredCenteredCartesian.Add(point);
+                }
+                var circle2 = GeometricFits.FitCircle(censoredCenteredCartesian);
+                Console.WriteLine("Radius: {0:f3}", circle2.Radius);
+                Console.WriteLine("Diameter: {0:f3}", circle2.Diameter);
+                Console.WriteLine("Center X: {0:f3}", circle2.Center.X);
+                Console.WriteLine("Center Y: {0:f3}", circle2.Center.Y);
+                Console.WriteLine("Center Offset: {0:f3}", circle2.Center.Length);
+                Console.WriteLine();
+
+                Console.ReadLine();
+
+                var function = AutomationLibrary.Mathematics.Curves.CircularFunction.FromCartesianPoints(censoredCenteredCartesian);
+                function = function.SavitzkyGolaySmooth(7, 31);
+                var area = function.ComputeArea();
+
+                Console.WriteLine("Circular area: {0:f2}", circle.Radius * circle.Radius * Math.PI);
+                Console.WriteLine("Smoothed function area: {0:f2}", area);
+
+                Console.ReadLine();
+
+                using (var writer = System.IO.File.CreateText(@"M:\Superior Energy\Test Runs\data_4.csv"))
+                {
+                    writer.WriteLine("X, Y, R, Theta");
+                    foreach (var point in cartesianPoints)
+                    {
+                        var centered = point - circle.Center;
+
+                        writer.WriteLine("{0},{1},{2},{3}", centered.X, centered.Y, centered.Length, centered.AngleFromXAxis);
+                    }
+                }
             }
         }
 

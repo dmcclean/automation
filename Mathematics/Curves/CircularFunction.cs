@@ -76,5 +76,21 @@ namespace AutomationLibrary.Mathematics.Curves
 
             return result;
         }
+
+        public double ComputeArea()
+        {
+            double thetaStep = 0.01;
+
+            var result = 0.0;
+            for (double theta = thetaStep; theta < 2 * Math.PI; theta += thetaStep)
+            {
+                var radius = _function.Evaluate(theta);
+
+                result += thetaStep * radius * radius;
+            }
+
+            // divide by two, since we computed the area for rectangles and we need it for circular segments
+            return result / 2;
+        }
     }
 }
