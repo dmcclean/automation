@@ -54,11 +54,18 @@ namespace MassBayEngineering.Interop.Beckhoff
 
         public TValue Read()
         {
-            if (_arrayDimensions != null)
+            try
             {
-                return _connection.ReadVariable<TValue>(_handle, _arrayDimensions);
+                if (_arrayDimensions != null)
+                {
+                    return _connection.ReadVariable<TValue>(_handle, _arrayDimensions);
+                }
+                else return _connection.ReadVariable<TValue>(_handle);
             }
-            else return _connection.ReadVariable<TValue>(_handle);
+            catch(AdsException ex)
+            {
+                throw new ControllerCommunicationException("Unable to read variable due to issues with controller connection.", ex);
+            }
         }
 
         public void SynchronousWrite(TValue value)

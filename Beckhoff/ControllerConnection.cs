@@ -99,7 +99,14 @@ namespace MassBayEngineering.Interop.Beckhoff
 
         internal void WriteVariable<TValue>(int handle, TValue value)
         {
-            _client.WriteAny(handle, value);
+            try
+            {
+                _client.WriteAny(handle, value);
+            }
+            catch(AdsException ex)
+            {
+                throw new ControllerCommunicationException("Unable to write to variable due to issues with controller connection.", ex);
+            }
         }
 
         private static readonly Type[] _variableConstructorFormalParameters;

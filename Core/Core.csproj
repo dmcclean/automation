@@ -42,6 +42,7 @@
     <Compile Include="Collections\RingBuffer`1.cs" />
     <Compile Include="Concurrency\Latch.cs" />
     <Compile Include="Concurrency\ManualResetEventLatch.cs" />
+    <Compile Include="Controllers\ControllerCommunicationException.cs" />
     <Compile Include="Controllers\IConsumerChannel`1.cs" />
     <Compile Include="Controllers\IControllerConnection`1.cs" />
     <Compile Include="Controllers\IControllerConnectionFactory`1.cs" />

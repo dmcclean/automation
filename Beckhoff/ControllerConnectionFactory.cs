@@ -40,10 +40,9 @@ namespace MassBayEngineering.Interop.Beckhoff
 
                 return result;
             }
-            catch (AdsException)
+            catch (AdsException ex)
             {
-                // TODO: wrap exception
-                throw;
+                throw new ControllerCommunicationException("Unable to connect to controller.", ex);
             }
         }
     }
