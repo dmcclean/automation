@@ -31,12 +31,46 @@ namespace MassBayEngineering.Interop.Beckhoff
 
         internal TcAdsSymbolInfo GetSymbol(string name)
         {
-            foreach (TcAdsSymbolInfo symbol in _symbols)
+            var result = GetSymbolFrom(_symbols, name);
+            if (result == null)
+                throw new ArgumentException(string.Format("Unable to find symbol {0}.", name));
+            else return result;
+        }
+
+        internal TcAdsSymbolInfo GetSymbolFrom(TcAdsSymbolInfoCollection symbols, string name)
+        {
+            foreach(var subname in GetPrefixes(name)) 
             {
-                if (symbol.Name == name) return symbol;
+                var sym = symbols.Cast<TcAdsSymbolInfo>().Where(s => s.ShortName == subname).SingleOrDefault();
+
+                if (sym != null) 
+                {
+                    if (name == subname) return sym;
+                    else
+                    {
+                        var resiudalName = name.Substring(subname.Length + 1);
+                        return GetSymbolFrom(sym.SubSymbols, resiudalName);
+                    }
+                }
             }
-            
-            throw new ArgumentException(string.Format("Unable to find symbol {0}.", name));
+
+            return null;
+        }
+
+        internal IEnumerable<string> GetPrefixes(string name)
+        {
+            string remaining = name;
+            while(remaining != null)
+            {
+                yield return remaining;
+                remaining = StripEndOfSymbolName(remaining);
+            }   
+        }
+        internal string StripEndOfSymbolName(string name)
+        {
+            var idx = name.LastIndexOf('.');
+            if (idx <= 0) return null;
+            else return name.Substring(0, idx);
         }
 
         internal int CreateVariableHandle(TcAdsSymbolInfo symbol)

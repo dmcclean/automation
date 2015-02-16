@@ -14,6 +14,16 @@ namespace AutomationLibrary.Collections
             b = temp;
         }
 
+        public static IEnumerable<T> SkipBothEnds<T>(this IEnumerable<T> items, int n)
+        {
+            var queue = new Queue<T>(n);
+            foreach (var item in items.Skip(n))
+            {
+                if (queue.Count >= n) yield return queue.Dequeue();
+                queue.Enqueue(item);
+            }
+        }
+
         public static void PlaceInAscendingOrder<T>(ref T a, ref T b)
             where T : IComparable<T>
         {
