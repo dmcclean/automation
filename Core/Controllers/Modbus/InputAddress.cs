@@ -9,10 +9,31 @@ namespace AutomationLibrary.Controllers.Modbus
         : IEquatable<InputAddress>
     {
         private const UInt16 FirstFormattedAddress = 10001;
+        private const UInt16 LastFormattedAddress  = 19999;
+        private const int FirstExtendedAddress = 100001;
+        private const int LastExtendedAddress  = 165536;
 
         private readonly UInt16 _wireValue;
 
-        public InputAddress(UInt16 wireValue)
+        public static InputAddress FromModbus984(string value)
+        {
+            int numericValue;
+            if (!int.TryParse(value, out numericValue)) throw new ArgumentException();
+            else if (value.Length == 6)
+            {
+                // extended addressing
+                if (FirstExtendedAddress <= numericValue && numericValue <= LastExtendedAddress) return new InputAddress((ushort)(numericValue - FirstExtendedAddress));
+                else throw new ArgumentOutOfRangeException();
+            }
+            else
+            {
+                // ordinary addressing
+                if (FirstFormattedAddress <= numericValue && numericValue <= LastFormattedAddress) return new InputAddress((ushort)(numericValue - FirstFormattedAddress));
+                else throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        internal InputAddress(UInt16 wireValue)
         {
             _wireValue = wireValue;
         }

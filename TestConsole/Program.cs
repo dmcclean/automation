@@ -14,7 +14,24 @@ namespace TestConsole
     {
         static void Main(string[] args)
         {
-            TestEclipsePipe();
+            TestClick();
+            //TestEclipsePipe();
+        }
+
+        static void TestClick()
+        {
+            var factory = new AutomationLibrary.Controllers.Modbus.ModbusControllerConnectionFactory(AutomationLibrary.Controllers.Modbus.ModbusSerialProtocol.RTU, new AutomationLibrary.Controllers.Modbus.SlaveAddress(1), "com12", 38400, System.IO.Ports.Parity.Odd, 8, System.IO.Ports.StopBits.One);
+            var conn = factory.Connect(TimeSpan.FromSeconds(10));
+
+            var greenLight = conn.RootNamespace.GetVariable<bool>(AutomationLibrary.Controllers.Modbus.CoilAddress.FromModbus984("8229"));
+
+            bool state = greenLight.Read();
+            while (true)
+            {
+                Console.ReadLine();
+                state = !state;
+                greenLight.SynchronousWrite(state);
+            }
         }
 
         static void TestEclipsePipe()

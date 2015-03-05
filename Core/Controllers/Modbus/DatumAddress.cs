@@ -30,26 +30,6 @@ namespace AutomationLibrary.Controllers.Modbus
             }
         }
 
-        public static implicit operator DatumAddress(CoilAddress address)
-        {
-            return new DatumAddress(DatumAddressKind.Coil, address.WireValue);
-        }
-
-        public static implicit operator DatumAddress(InputAddress address)
-        {
-            return new DatumAddress(DatumAddressKind.Input, address.WireValue);
-        }
-
-        public static implicit operator DatumAddress(InputRegisterAddress address)
-        {
-            return new DatumAddress(DatumAddressKind.InputRegister, address.WireValue);
-        }
-
-        public static implicit operator DatumAddress(HoldingRegisterAddress address)
-        {
-            return new DatumAddress(DatumAddressKind.HoldingRegister, address.WireValue);
-        }
-
         public static explicit operator CoilAddress(DatumAddress address)
         {
             if (address._kind != DatumAddressKind.Coil) throw new InvalidCastException();

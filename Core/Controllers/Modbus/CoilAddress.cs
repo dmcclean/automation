@@ -8,9 +8,30 @@ namespace AutomationLibrary.Controllers.Modbus
     public struct CoilAddress
         : IEquatable<CoilAddress>
     {
-        private const UInt16 FirstFormattedAddress = 1;
+        private const UInt16 FirstFormattedAddress = 00001;
+        private const UInt16 LastFormattedAddress  = 09999;
+        private const int FirstExtendedAddress = 000001;
+        private const int LastExtendedAddress  = 065536;
 
         private readonly UInt16 _wireValue;
+
+        public static CoilAddress FromModbus984(string value)
+        {
+            int numericValue;
+            if(!int.TryParse(value, out numericValue)) throw new ArgumentException();
+            else if (value.Length == 6)
+            {
+                // extended addressing
+                if(FirstExtendedAddress <= numericValue && numericValue <= LastExtendedAddress) return new CoilAddress((ushort)(numericValue - FirstExtendedAddress));
+                else throw new ArgumentOutOfRangeException();
+            }
+            else
+            {
+                // ordinary addressing
+                if (FirstFormattedAddress <= numericValue && numericValue <= LastFormattedAddress) return new CoilAddress((ushort)(numericValue - FirstFormattedAddress));
+                else throw new ArgumentOutOfRangeException();
+            }
+        }
 
         internal CoilAddress(UInt16 wireValue)
         {
