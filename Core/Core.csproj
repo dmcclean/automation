@@ -64,6 +64,8 @@
     <Compile Include="Controllers\Modbus\FunctionCode.cs" />
     <Compile Include="Controllers\Modbus\InputRegisterVariable.cs" />
     <Compile Include="Controllers\Modbus\InputVariable.cs" />
+    <Compile Include="Controllers\Modbus\Message.cs" />
+    <Compile Include="Controllers\Modbus\ModbusTransport.cs" />
     <Compile Include="Controllers\Modbus\SlaveAddress.cs" />
     <Compile Include="Controllers\PlcTypeNameAttribute.cs" />
     <Compile Include="Controllers\Signal`1.cs" />

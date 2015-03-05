@@ -17,6 +17,8 @@ namespace AutomationLibrary.Controllers.Modbus
             _wireValue = wireValue;
         }
 
+        internal ushort WireValue { get { return _wireValue; } }
+
         public bool Equals(HoldingRegisterAddress other)
         {
             return _wireValue == other._wireValue;
