@@ -8,17 +8,19 @@ namespace AutomationLibrary.Controllers.Modbus
     internal sealed class InputVariable
         : IVariable<bool>
     {
-        // TODO: connection handle
+        private readonly ModbusControllerConnection _connection;
         private readonly InputAddress _address;
 
-        public InputVariable(InputAddress address)
+        public InputVariable(ModbusControllerConnection connection, InputAddress address)
         {
+            _connection = connection;
             _address = address;
         }
 
         public bool Read()
         {
-            throw new NotImplementedException();
+            var result = _connection.ReadInputs(_address, 1);
+            return result[0];
         }
     }
 }

@@ -8,17 +8,19 @@ namespace AutomationLibrary.Controllers.Modbus
     internal sealed class InputRegisterVariable
         : IVariable<UInt16>
     {
-        // TODO: connection handle
+        private readonly ModbusControllerConnection _connection;
         private readonly InputRegisterAddress _address;
 
-        public InputRegisterVariable(InputRegisterAddress address)
+        public InputRegisterVariable(ModbusControllerConnection connection, InputRegisterAddress address)
         {
+            _connection = connection;
             _address = address;
         }
 
         public UInt16 Read()
         {
-            throw new NotImplementedException();
+            var result = _connection.ReadInputRegisters(_address, 1);
+            return result[0];
         }
     }
 }

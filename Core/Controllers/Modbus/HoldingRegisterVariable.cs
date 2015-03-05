@@ -9,27 +9,30 @@ namespace AutomationLibrary.Controllers.Modbus
     internal sealed class HoldingRegisterVariable
         : IMutableVariable<UInt16>
     {
-        // TODO: connection handle
+        private readonly ModbusControllerConnection _connection;
         private readonly HoldingRegisterAddress _address;
 
-        public HoldingRegisterVariable(HoldingRegisterAddress address)
+        public HoldingRegisterVariable(ModbusControllerConnection connection, HoldingRegisterAddress address)
         {
+            _connection = connection;
             _address = address;
         }
 
         public void SynchronousWrite(UInt16 value)
         {
-            throw new NotImplementedException();
+            _connection.WriteHoldingRegister(_address, value);
         }
 
         public ILatch DeferredWrite(UInt16 value)
         {
-            throw new NotImplementedException();
+            SynchronousWrite(value);
+            return Latch.AlreadyCompleted;
         }
 
         public UInt16 Read()
         {
-            throw new NotImplementedException();
+            var result = _connection.ReadHoldingRegisters(_address, 1);
+            return result[0];
         }
     }
 }

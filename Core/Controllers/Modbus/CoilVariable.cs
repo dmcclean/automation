@@ -9,27 +9,30 @@ namespace AutomationLibrary.Controllers.Modbus
     internal sealed class CoilVariable
         : IMutableVariable<bool>
     {
-        // TODO: connection handle
+        private readonly ModbusControllerConnection _connection;
         private readonly CoilAddress _address;
 
-        public CoilVariable(CoilAddress address)
+        public CoilVariable(ModbusControllerConnection connection, CoilAddress address)
         {
+            _connection = connection;
             _address = address;
         }
 
         public void SynchronousWrite(bool value)
         {
-            throw new NotImplementedException();
+            _connection.WriteCoil(_address, value);
         }
 
         public ILatch DeferredWrite(bool value)
         {
-            throw new NotImplementedException();
+            SynchronousWrite(value);
+            return Latch.AlreadyCompleted;
         }
 
         public bool Read()
         {
-            throw new NotImplementedException();
+            var result = _connection.ReadCoils(_address, 1);
+            return result[0];
         }
     }
 }
