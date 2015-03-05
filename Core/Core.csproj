@@ -89,6 +89,8 @@
     <Compile Include="Controllers\WrappedMutableVariable`2.cs" />
     <Compile Include="Controllers\WrappedVariable`2.cs" />
     <Compile Include="Concurrency\ILatch.cs" />
+    <Compile Include="Interop\AutomationDirect\ClickDeclarationSpace.cs" />
+    <Compile Include="Interop\AutomationDirect\ClickVariableType.cs" />
     <Compile Include="Mathematics\ExtrapolationBehavior.cs" />
     <Compile Include="Mathematics\Fitting\IRationalFunctionFitter.cs" />
     <Compile Include="Mathematics\Geometry\Circle2.cs" />

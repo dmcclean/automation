@@ -65,11 +65,80 @@ namespace AutomationLibrary.Controllers.Modbus
                 }
             }
 
+            private static int IntFromArray(ushort[] value)
+            {
+                return unchecked((int)UIntFromArray(value));
+            }
+
+            private static ushort[] IntToArray(int value)
+            {
+                return UIntToArray(unchecked((uint)value));
+            }
+
+            private static uint UIntFromArray(ushort[] value)
+            {
+                var result = unchecked((uint)((value[0] << 16) | value[1]));
+
+                return result;
+            }
+
+            private static ushort[] UIntToArray(uint value)
+            {
+                unchecked
+                {
+                    var high = (ushort)(value >> 16);
+                    var low = (ushort)value;
+
+                    var result = new ushort[] { high, low };
+
+                    return result;
+                }
+            }
+
+            private static float FloatFromArray(ushort[] value)
+            {
+                unchecked
+                {
+                    var bytes = new byte[4];
+                    bytes[0] = (byte)(value[0] >> 8);
+                    bytes[1] = (byte)(value[0]);
+                    bytes[2] = (byte)(value[1] >> 8);
+                    bytes[3] = (byte)(value[1]);
+
+                    if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
+
+                    // bytes are now host order
+
+                    var result = BitConverter.ToSingle(bytes, 0);
+
+                    return result;
+                }
+            }
+
+            private static ushort[] FloatToArray(float value)
+            {
+                var bytes = BitConverter.GetBytes(value);
+                if (BitConverter.IsLittleEndian) bytes.Reverse();
+
+                // bytes are now big-endian
+
+                var high = (ushort)(bytes[0] << 8 | bytes[1]);
+                var low = (ushort)(bytes[2] << 8 | bytes[3]);
+
+                var result = new ushort[] { high, low };
+
+                return result;
+            }
+
             private IVariable<TValue> WrapReadOnlyRegister<TAddress, TValue>(TAddress address, Func<TAddress, IVariable<ushort>> createSingle, Func<TAddress, ushort, IVariable<ushort[]>> createComposite)
             {
                 if (typeof(TValue) == typeof(ushort)) return createSingle(address) as IVariable<TValue>;
                 else if (typeof(TValue) == typeof(short)) return createSingle(address).Wrap(x => unchecked((short)x)) as IVariable<TValue>;
                 else if (typeof(TValue) == typeof(byte)) return createSingle(address).Wrap(x => unchecked((byte)x & 0xff)) as IVariable<TValue>;
+                else if (typeof(TValue) == typeof(char)) return createSingle(address).Wrap(x => unchecked((char)x & 0xff)) as IVariable<TValue>;
+                else if (typeof(TValue) == typeof(int)) return createComposite(address, 2).Wrap(IntFromArray) as IVariable<TValue>;
+                else if (typeof(TValue) == typeof(uint)) return createComposite(address, 2).Wrap(UIntFromArray) as IVariable<TValue>;
+                else if (typeof(TValue) == typeof(float)) return createComposite(address, 2).Wrap(FloatFromArray) as IVariable<TValue>;
                 else throw new Exception("Unsupported register type.");
             }
 
@@ -78,6 +147,10 @@ namespace AutomationLibrary.Controllers.Modbus
                 if (typeof(TValue) == typeof(ushort)) return createSingle(address) as IMutableVariable<TValue>;
                 else if (typeof(TValue) == typeof(short)) return createSingle(address).Wrap(x => unchecked((short)x), x => unchecked((ushort)x)) as IMutableVariable<TValue>;
                 else if (typeof(TValue) == typeof(byte)) return createSingle(address).Wrap(x => unchecked((byte)x & 0xff), x => unchecked((ushort)x)) as IMutableVariable<TValue>;
+                else if (typeof(TValue) == typeof(char)) return createSingle(address).Wrap(x => unchecked((char)x & 0xff), x => unchecked((ushort)x)) as IMutableVariable<TValue>;
+                else if (typeof(TValue) == typeof(int)) return createComposite(address, 2).Wrap(IntFromArray, IntToArray) as IMutableVariable<TValue>;
+                else if (typeof(TValue) == typeof(uint)) return createComposite(address, 2).Wrap(UIntFromArray, UIntToArray) as IMutableVariable<TValue>;
+                else if (typeof(TValue) == typeof(float)) return createComposite(address, 2).Wrap(FloatFromArray, FloatToArray) as IMutableVariable<TValue>;
                 else throw new Exception("Unsupported register type.");
             }
 

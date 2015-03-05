@@ -13,6 +13,17 @@ namespace AutomationLibrary.Controllers.Modbus
         private const int FirstExtendedAddress = 400001;
         private const int LastExtendedAddress  = 465536;
 
+        public static HoldingRegisterAddress FromInteger(int value)
+        {
+            if (1 <= value && value <= 65536) return new HoldingRegisterAddress((ushort)(value - 1));
+            else throw new ArgumentOutOfRangeException();
+        }
+
+        public static HoldingRegisterAddress FromRawValue(ushort value)
+        {
+            return new HoldingRegisterAddress(value);
+        }
+
         public static HoldingRegisterAddress FromModbus984(string value)
         {
             int numericValue;

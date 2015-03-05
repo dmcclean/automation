@@ -15,6 +15,17 @@ namespace AutomationLibrary.Controllers.Modbus
 
         private readonly UInt16 _wireValue;
 
+        public static InputRegisterAddress FromInteger(int value)
+        {
+            if (1 <= value && value <= 65536) return new InputRegisterAddress((ushort)(value - 1));
+            else throw new ArgumentOutOfRangeException();
+        }
+
+        public static InputRegisterAddress FromRawValue(ushort value)
+        {
+            return new InputRegisterAddress(value);
+        }
+
         public static InputRegisterAddress FromModbus984(string value)
         {
             int numericValue;

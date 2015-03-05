@@ -15,6 +15,17 @@ namespace AutomationLibrary.Controllers.Modbus
 
         private readonly UInt16 _wireValue;
 
+        public static CoilAddress FromInteger(int value)
+        {
+            if (1 <= value && value <= 65536) return new CoilAddress((ushort)(value - 1));
+            else throw new ArgumentOutOfRangeException();
+        }
+
+        public static CoilAddress FromRawValue(ushort value)
+        {
+            return new CoilAddress(value);
+        }
+
         public static CoilAddress FromModbus984(string value)
         {
             int numericValue;
