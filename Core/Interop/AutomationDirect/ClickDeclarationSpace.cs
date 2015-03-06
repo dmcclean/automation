@@ -12,13 +12,91 @@ namespace MassBayEngineering.Interop.AutomationDirect
         : IDeclarationSpace<string>
     {
         private readonly IDeclarationSpace<DatumAddress> _underlying;
+        private readonly Dictionary<ClickVariableType, AddressSpace> _addressMap;
 
         private static readonly Regex AddressPattern = new Regex(@"^(?<prefix>X|Y|C|T|CT|SC|DS|DD|DH|DF|XD|YD|TD|CTD|SD|TXT)(?<num>\d+)$");
+        
 
         public ClickDeclarationSpace(IDeclarationSpace<DatumAddress> underlying)
         {
             _underlying = underlying;
+            _addressMap = new Dictionary<ClickVariableType, AddressSpace>();
+
+            RegisterAddressSpace(ClickVariableType.X,   DatumAddressKind.Input,           0x0000, typeof(bool),  1, 816);
+            RegisterAddressSpace(ClickVariableType.Y,   DatumAddressKind.Coil,            0x2000, typeof(bool),  1, 816);
+            RegisterAddressSpace(ClickVariableType.C,   DatumAddressKind.Coil,            0x4000, typeof(bool),  1, 2000);
+            RegisterAddressSpace(ClickVariableType.T,   DatumAddressKind.Input,           0xB000, typeof(bool),  1, 500);
+            RegisterAddressSpace(ClickVariableType.CT,  DatumAddressKind.Input,           0xC000, typeof(bool),  1, 250);
+            RegisterAddressSpace(ClickVariableType.SC,  DatumAddressKind.Input,           0xF000, typeof(bool),  1, 1000);
+            RegisterAddressSpace(ClickVariableType.DS,  DatumAddressKind.HoldingRegister, 0x0000, typeof(short), 1, 4500);
+            RegisterAddressSpace(ClickVariableType.DD,  DatumAddressKind.HoldingRegister, 0x4000, typeof(int),   2, 1000);
+            RegisterAddressSpace(ClickVariableType.DH,  DatumAddressKind.HoldingRegister, 0x6000, typeof(short), 1, 500);
+            RegisterAddressSpace(ClickVariableType.DF,  DatumAddressKind.HoldingRegister, 0x7000, typeof(float), 2, 500);
+            RegisterAddressSpace(ClickVariableType.XD,  DatumAddressKind.InputRegister,   0xE000, typeof(uint),  2, 0, 8);
+            RegisterAddressSpace(ClickVariableType.YD,  DatumAddressKind.HoldingRegister, 0xE200, typeof(uint),  2, 0, 8);
+            RegisterAddressSpace(ClickVariableType.TD,  DatumAddressKind.InputRegister,   0xB000, typeof(short), 1, 500);
+            RegisterAddressSpace(ClickVariableType.CTD, DatumAddressKind.InputRegister,   0xC000, typeof(int),   2, 250);
+            RegisterAddressSpace(ClickVariableType.SD,  DatumAddressKind.InputRegister,   0xF000, typeof(short), 1, 1000);
+            RegisterAddressSpace(ClickVariableType.TXT, DatumAddressKind.HoldingRegister, 0x9000, typeof(char),  1, 1000);
         }
+
+        #region Address Space
+
+        private void RegisterAddressSpace(ClickVariableType variableType, DatumAddressKind addressKind, int baseAddress, Type datumType, int datumSize, int minLogicalAddress, int maxLogicalAddress)
+        {
+            var space = new AddressSpace(addressKind, baseAddress, datumType, datumSize, minLogicalAddress, maxLogicalAddress);
+            _addressMap.Add(variableType, space);
+        }
+
+        private void RegisterAddressSpace(ClickVariableType variableType, DatumAddressKind addressKind, int baseAddress, Type datumType, int datumSize, int maxLogicalAddress)
+        {
+            RegisterAddressSpace(variableType, addressKind, baseAddress, datumType, datumSize, 1, maxLogicalAddress);
+        }
+
+        private sealed class AddressSpace
+        {
+            public DatumAddressKind Kind { get; set; }
+            public int BaseAddress { get; set; }
+            public Type DatumType { get; set; }
+            public int DatumSize { get; set; }
+            public int MinLogicalAddress { get; set; }
+            public int MaxLogicalAddress { get; set; }
+
+            public AddressSpace(DatumAddressKind kind, int baseAddress, Type datumType, int datumSize, int minLogicalAddress, int maxLogicalAddress)
+            {
+                this.Kind = kind;
+                this.BaseAddress = baseAddress;
+                this.DatumType = datumType;
+                this.DatumSize = datumSize;
+                this.MinLogicalAddress = minLogicalAddress;
+                this.MaxLogicalAddress = maxLogicalAddress;
+            }
+
+            public DatumAddress CreateAddress(int numericValue)
+            {
+                if (numericValue <= 0) throw new ArgumentOutOfRangeException();
+                if (numericValue > MaxLogicalAddress) throw new ArgumentOutOfRangeException();
+
+                var raw = (ushort)(BaseAddress + DatumSize * (numericValue - MinLogicalAddress));
+
+                switch (Kind)
+                {
+                    case DatumAddressKind.Coil:
+                        return CoilAddress.FromRawValue(raw);
+                    case DatumAddressKind.Input:
+                        return InputAddress.FromRawValue(raw);
+                    case DatumAddressKind.HoldingRegister:
+                        return HoldingRegisterAddress.FromRawValue(raw);
+                    case DatumAddressKind.InputRegister:
+                        return InputRegisterAddress.FromRawValue(raw);
+                    default:
+                        throw new ApplicationException();
+
+                }
+            }
+        }
+
+        #endregion
 
         #region Parsing
 
@@ -31,43 +109,10 @@ namespace MassBayEngineering.Interop.AutomationDirect
                 var prefix = (ClickVariableType)Enum.Parse(typeof(ClickVariableType), match.Groups["prefix"].Value);
                 int numericValue = int.Parse(match.Groups["num"].Value);
 
-                switch (prefix)
-                {
-                    case ClickVariableType.X:
-                        return CreateInput(numericValue, 0x0000);
-                    case ClickVariableType.Y:
-                        return CreateCoil(numericValue, 0x2000);
-                    case ClickVariableType.C:
-                        return CreateCoil(numericValue, 0x4000);
-                    case ClickVariableType.T:
-                        return CreateInput(numericValue, 0xB000);
-                    case ClickVariableType.CT:
-                        return CreateInput(numericValue, 0xC000);
-                    case ClickVariableType.SC:
-                        return CreateInput(numericValue, 0xF000);
-                    case ClickVariableType.DS:
-                        return CreateHoldingRegister(numericValue, 0x0000, typeof(short), 1);
-                    case ClickVariableType.DD:
-                        return CreateHoldingRegister(numericValue, 0x4000, typeof(int), 2);;
-                    case ClickVariableType.DH:
-                        return CreateHoldingRegister(numericValue, 0x6000, typeof(short), 1);
-                    case ClickVariableType.DF:
-                        return CreateHoldingRegister(numericValue, 0x7000, typeof(float), 2);
-                    case ClickVariableType.XD:
-                        return CreateInputRegister(numericValue, 0xE000, typeof(uint), 2);
-                    case ClickVariableType.YD:
-                        return CreateHoldingRegister(numericValue, 0xE200, typeof(uint), 2);
-                    case ClickVariableType.TD:
-                        return CreateInputRegister(numericValue, 0xB000, typeof(short), 1);
-                    case ClickVariableType.CTD:
-                        return CreateInputRegister(numericValue, 0xC000, typeof(int), 2);
-                    case ClickVariableType.SD:
-                        return CreateInputRegister(numericValue, 0xF000, typeof(short), 1);
-                    case ClickVariableType.TXT:
-                        return CreateHoldingRegister(numericValue, 0x9000, typeof(char), 1);
-                    default:
-                        throw new ArgumentException();
-                }
+                var addressSpace = _addressMap[prefix];
+                var address = addressSpace.CreateAddress(numericValue);
+
+                return Tuple.Create(address, addressSpace.DatumType, addressSpace.DatumSize);
             }
         }
 
@@ -96,6 +141,8 @@ namespace MassBayEngineering.Interop.AutomationDirect
         }
 
         #endregion
+
+        #region Generic Interface
 
         public IVariable<TValue> GetReadOnlyVariable<TValue>(string name)
         {
@@ -169,6 +216,108 @@ namespace MassBayEngineering.Interop.AutomationDirect
                     throw new ApplicationException();
             }
         }
+
+        #endregion
+
+        #region Specifically Typed Click Interface
+
+        public IVariable<bool> X(int value)
+        {
+            var address = _addressMap[ClickVariableType.X].CreateAddress(value);
+            return _underlying.GetReadOnlyVariable<bool>(address);
+        }
+
+        public IMutableVariable<bool> Y(int value)
+        {
+            var address = _addressMap[ClickVariableType.Y].CreateAddress(value);
+            return _underlying.GetVariable<bool>(address);
+        }
+
+        public IMutableVariable<bool> C(int value)
+        {
+            var address = _addressMap[ClickVariableType.C].CreateAddress(value);
+            return _underlying.GetVariable<bool>(address);
+        }
+
+        public IVariable<bool> T(int value)
+        {
+            var address = _addressMap[ClickVariableType.T].CreateAddress(value);
+            return _underlying.GetReadOnlyVariable<bool>(address);
+        }
+
+        public IVariable<bool> CT(int value)
+        {
+            var address = _addressMap[ClickVariableType.C].CreateAddress(value);
+            return _underlying.GetReadOnlyVariable<bool>(address);
+        }
+
+        public IVariable<bool> SC(int value)
+        {
+            var address = _addressMap[ClickVariableType.SC].CreateAddress(value);
+            return _underlying.GetReadOnlyVariable<bool>(address);
+        }
+
+        public IMutableVariable<short> DS(int value)
+        {
+            var address = _addressMap[ClickVariableType.DS].CreateAddress(value);
+            return _underlying.GetVariable<short>(address);
+        }
+
+        public IMutableVariable<int> DD(int value)
+        {
+            var address = _addressMap[ClickVariableType.DD].CreateAddress(value);
+            return _underlying.GetVariable<int>(address);
+        }
+
+        public IMutableVariable<short> DH(int value)
+        {
+            var address = _addressMap[ClickVariableType.DH].CreateAddress(value);
+            return _underlying.GetVariable<short>(address);
+        }
+
+        public IMutableVariable<float> DF(int value)
+        {
+            var address = _addressMap[ClickVariableType.DF].CreateAddress(value);
+            return _underlying.GetVariable<float>(address);
+        }
+
+        public IVariable<uint> XD(int value)
+        {
+            var address = _addressMap[ClickVariableType.XD].CreateAddress(value);
+            return _underlying.GetReadOnlyVariable<uint>(address);
+        }
+
+        public IMutableVariable<uint> YD(int value)
+        {
+            var address = _addressMap[ClickVariableType.YD].CreateAddress(value);
+            return _underlying.GetVariable<uint>(address);
+        }
+
+        public IVariable<short> TD(int value)
+        {
+            var address = _addressMap[ClickVariableType.TD].CreateAddress(value);
+            return _underlying.GetReadOnlyVariable<short>(address);
+        }
+
+        public IVariable<int> CTD(int value)
+        {
+            var address = _addressMap[ClickVariableType.CTD].CreateAddress(value);
+            return _underlying.GetReadOnlyVariable<int>(address);
+        }
+
+        public IVariable<short> SD(int value)
+        {
+            var address = _addressMap[ClickVariableType.SD].CreateAddress(value);
+            return _underlying.GetReadOnlyVariable<short>(address);
+        }
+
+        public IMutableVariable<char> TXT(int value)
+        {
+            var address = _addressMap[ClickVariableType.TXT].CreateAddress(value);
+            return _underlying.GetVariable<char>(address);
+        }
+
+        #endregion
 
         public AutomationLibrary.Concurrency.IWaitHandle GetWaitHandle(string name)
         {
