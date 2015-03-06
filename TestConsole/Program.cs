@@ -21,9 +21,16 @@ namespace TestConsole
         static void TestClick()
         {
             var factory = new AutomationLibrary.Controllers.Modbus.ModbusControllerConnectionFactory(AutomationLibrary.Controllers.Modbus.ModbusSerialProtocol.RTU, new AutomationLibrary.Controllers.Modbus.SlaveAddress(1), "com12", 38400, System.IO.Ports.Parity.Odd, 8, System.IO.Ports.StopBits.One);
-            var conn = factory.Connect(TimeSpan.FromSeconds(10));
+            var conn = factory.Connect(TimeSpan.FromSeconds(3));
 
-            var greenLight = conn.RootNamespace.GetVariable<bool>(AutomationLibrary.Controllers.Modbus.CoilAddress.FromModbus984("8229"));
+            var clickSpace = new MassBayEngineering.Interop.AutomationDirect.ClickDeclarationSpace(conn.RootNamespace);
+
+            var hand = clickSpace.X(101);
+            var greenLight = clickSpace.Y(105);
+            var aCoil = clickSpace.C(7);
+            var aTimer = clickSpace.T(103);
+            var aTimerValue = clickSpace.TD(103);
+            var aChar = clickSpace.TXT(37);
 
             bool state = greenLight.Read();
             while (true)
@@ -31,6 +38,13 @@ namespace TestConsole
                 Console.ReadLine();
                 state = !state;
                 greenLight.SynchronousWrite(state);
+
+                Console.WriteLine("C7: {0}", aCoil.Read());
+                Console.WriteLine("T103: {0}", aTimer.Read());
+                Console.WriteLine("TD103: {0}", aTimerValue.Read());
+                Console.WriteLine("TXT37: {0}", aChar.Read());
+
+                aChar.SynchronousWrite('$');
             }
         }
 

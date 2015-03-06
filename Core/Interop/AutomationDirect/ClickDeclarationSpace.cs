@@ -15,7 +15,6 @@ namespace MassBayEngineering.Interop.AutomationDirect
         private readonly Dictionary<ClickVariableType, AddressSpace> _addressMap;
 
         private static readonly Regex AddressPattern = new Regex(@"^(?<prefix>X|Y|C|T|CT|SC|DS|DD|DH|DF|XD|YD|TD|CTD|SD|TXT)(?<num>\d+)$");
-        
 
         public ClickDeclarationSpace(IDeclarationSpace<DatumAddress> underlying)
         {
@@ -44,7 +43,7 @@ namespace MassBayEngineering.Interop.AutomationDirect
 
         private void RegisterAddressSpace(ClickVariableType variableType, DatumAddressKind addressKind, int baseAddress, Type datumType, int datumSize, int minLogicalAddress, int maxLogicalAddress)
         {
-            var space = new AddressSpace(addressKind, baseAddress, datumType, datumSize, minLogicalAddress, maxLogicalAddress);
+            var space = new AddressSpace(variableType, addressKind, baseAddress, datumType, datumSize, minLogicalAddress, maxLogicalAddress);
             _addressMap.Add(variableType, space);
         }
 
@@ -55,6 +54,7 @@ namespace MassBayEngineering.Interop.AutomationDirect
 
         private sealed class AddressSpace
         {
+            public ClickVariableType Type { get; set; }
             public DatumAddressKind Kind { get; set; }
             public int BaseAddress { get; set; }
             public Type DatumType { get; set; }
@@ -62,8 +62,9 @@ namespace MassBayEngineering.Interop.AutomationDirect
             public int MinLogicalAddress { get; set; }
             public int MaxLogicalAddress { get; set; }
 
-            public AddressSpace(DatumAddressKind kind, int baseAddress, Type datumType, int datumSize, int minLogicalAddress, int maxLogicalAddress)
+            public AddressSpace(ClickVariableType type, DatumAddressKind kind, int baseAddress, Type datumType, int datumSize, int minLogicalAddress, int maxLogicalAddress)
             {
+                this.Type = type;
                 this.Kind = kind;
                 this.BaseAddress = baseAddress;
                 this.DatumType = datumType;
@@ -74,10 +75,9 @@ namespace MassBayEngineering.Interop.AutomationDirect
 
             public DatumAddress CreateAddress(int numericValue)
             {
-                if (numericValue <= 0) throw new ArgumentOutOfRangeException();
-                if (numericValue > MaxLogicalAddress) throw new ArgumentOutOfRangeException();
+                if (!IsValid(numericValue)) throw new ArgumentOutOfRangeException();
 
-                var raw = (ushort)(BaseAddress + DatumSize * (numericValue - MinLogicalAddress));
+                var raw = ComputeAddress(numericValue);
 
                 switch (Kind)
                 {
@@ -92,6 +92,42 @@ namespace MassBayEngineering.Interop.AutomationDirect
                     default:
                         throw new ApplicationException();
 
+                }
+            }
+
+            private ushort ComputeAddress(int numericValue)
+            {
+                switch (Type)
+                {
+                    case ClickVariableType.X:
+                    case ClickVariableType.Y:
+                        // deal with the fact that they are in chunks of 16
+                        var hundreds = numericValue / 100;
+                        var remainder = numericValue % 100;
+
+                        return (ushort)(BaseAddress + (0x20 * hundreds) + remainder - 1);
+                    default:
+                        return (ushort)(BaseAddress + DatumSize * (numericValue - MinLogicalAddress));
+                }
+            }
+
+            private bool IsValid(int numericValue)
+            {
+                if (numericValue < MinLogicalAddress) return false;
+                else if (numericValue > MaxLogicalAddress) return false;
+                else
+                {
+                    switch (Type)
+                    {
+                        case ClickVariableType.X:
+                        case ClickVariableType.Y:
+                            // check if they are 1-16 for some hundred
+                            var lastTwoDigits = numericValue % 100;
+                            if (lastTwoDigits == 0 || lastTwoDigits > 16) return false;
+                            else return true;
+                        default:
+                            return true;
+                    }
                 }
             }
         }

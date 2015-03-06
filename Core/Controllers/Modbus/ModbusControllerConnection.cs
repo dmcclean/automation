@@ -146,8 +146,8 @@ namespace AutomationLibrary.Controllers.Modbus
             {
                 if (typeof(TValue) == typeof(ushort)) return createSingle(address) as IMutableVariable<TValue>;
                 else if (typeof(TValue) == typeof(short)) return createSingle(address).Wrap(x => unchecked((short)x), x => unchecked((ushort)x)) as IMutableVariable<TValue>;
-                else if (typeof(TValue) == typeof(byte)) return createSingle(address).Wrap(x => unchecked((byte)x & 0xff), x => unchecked((ushort)x)) as IMutableVariable<TValue>;
-                else if (typeof(TValue) == typeof(char)) return createSingle(address).Wrap(x => unchecked((char)x & 0xff), x => unchecked((ushort)x)) as IMutableVariable<TValue>;
+                else if (typeof(TValue) == typeof(byte)) return createSingle(address).Wrap(x => unchecked((byte)(x & 0xff)), x => unchecked((ushort)x)) as IMutableVariable<TValue>;
+                else if (typeof(TValue) == typeof(char)) return createSingle(address).Wrap(x => unchecked((char)(x & 0xff)), x => unchecked((ushort)x)) as IMutableVariable<TValue>;
                 else if (typeof(TValue) == typeof(int)) return createComposite(address, 2).Wrap(IntFromArray, IntToArray) as IMutableVariable<TValue>;
                 else if (typeof(TValue) == typeof(uint)) return createComposite(address, 2).Wrap(UIntFromArray, UIntToArray) as IMutableVariable<TValue>;
                 else if (typeof(TValue) == typeof(float)) return createComposite(address, 2).Wrap(FloatFromArray, FloatToArray) as IMutableVariable<TValue>;
