@@ -77,7 +77,7 @@ namespace AutomationLibrary.Controllers.Modbus
 
             private static uint UIntFromArray(ushort[] value)
             {
-                var result = unchecked((uint)((value[0] << 16) | value[1]));
+                var result = unchecked((uint)((value[1] << 16) | value[0]));
 
                 return result;
             }
@@ -89,7 +89,7 @@ namespace AutomationLibrary.Controllers.Modbus
                     var high = (ushort)(value >> 16);
                     var low = (ushort)value;
 
-                    var result = new ushort[] { high, low };
+                    var result = new ushort[] { low, high };
 
                     return result;
                 }
@@ -100,13 +100,12 @@ namespace AutomationLibrary.Controllers.Modbus
                 unchecked
                 {
                     var bytes = new byte[4];
-                    bytes[0] = (byte)(value[0] >> 8);
-                    bytes[1] = (byte)(value[0]);
-                    bytes[2] = (byte)(value[1] >> 8);
-                    bytes[3] = (byte)(value[1]);
+                    bytes[0] = (byte)(value[0]);
+                    bytes[1] = (byte)(value[0] >> 8);
+                    bytes[2] = (byte)(value[1]);
+                    bytes[3] = (byte)(value[1] >> 8);
 
-                    if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
-
+                    if (!BitConverter.IsLittleEndian) bytes.Reverse();
                     // bytes are now host order
 
                     var result = BitConverter.ToSingle(bytes, 0);
@@ -118,12 +117,12 @@ namespace AutomationLibrary.Controllers.Modbus
             private static ushort[] FloatToArray(float value)
             {
                 var bytes = BitConverter.GetBytes(value);
-                if (BitConverter.IsLittleEndian) bytes.Reverse();
+                if (!BitConverter.IsLittleEndian) bytes.Reverse();
 
                 // bytes are now big-endian
 
-                var high = (ushort)(bytes[0] << 8 | bytes[1]);
-                var low = (ushort)(bytes[2] << 8 | bytes[3]);
+                var high = (ushort)(bytes[1] << 8 | bytes[0]);
+                var low = (ushort)(bytes[3] << 8 | bytes[2]);
 
                 var result = new ushort[] { high, low };
 

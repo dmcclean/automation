@@ -31,6 +31,8 @@ namespace TestConsole
             var aTimer = clickSpace.T(103);
             var aTimerValue = clickSpace.TD(103);
             var aChar = clickSpace.TXT(37);
+            var aFloat = clickSpace.DF(300);
+            var anInt = clickSpace.DD(300);
 
             bool state = greenLight.Read();
             while (true)
@@ -43,6 +45,8 @@ namespace TestConsole
                 Console.WriteLine("T103: {0}", aTimer.Read());
                 Console.WriteLine("TD103: {0}", aTimerValue.Read());
                 Console.WriteLine("TXT37: {0}", aChar.Read());
+                Console.WriteLine("DF300: {0}", aFloat.Read());
+                Console.WriteLine("DD300: {0}", anInt.Read());
 
                 aChar.SynchronousWrite('$');
             }
