@@ -16,6 +16,8 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             _diameter = diameter;
         }
 
+        public DiameterConstraint Diameter { get { return _diameter; } }
+
         public override string ReasonForIncompatibilityWith(IEnumerable<ProfileConstraint> others)
         {
             foreach (var constraint in others)

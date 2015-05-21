@@ -25,6 +25,11 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             _maximumPosition = maximumPosition;
         }
 
+        public double MinimumPosition { get { return _minimumPosition; } }
+        public double MaximumPosition { get { return _maximumPosition; } }
+
+        public DiameterConstraint Diameter { get { return _diameterConstraint; } }
+
         public override string ReasonForIncompatibilityWith(IEnumerable<ProfileConstraint> others)
         {
             return null;

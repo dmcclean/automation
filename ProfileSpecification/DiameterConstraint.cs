@@ -37,5 +37,38 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
 
             return new DiameterConstraint(DiameterConstraintType.Limits, minimumDiameter, maximumDiameter);
         }
+
+        private const double NominalTolerance = 0.15;
+
+        public double DrawingMinimumDiameter(double parentProfileIntersectionDiameter)
+        {
+            switch (_type)
+            {
+                case DiameterConstraintType.IntersectionWithParentProfile:
+                    return parentProfileIntersectionDiameter;
+                case DiameterConstraintType.Limits:
+                    return _minimumDiameter;
+                case DiameterConstraintType.Nominal:
+                    return _minimumDiameter * (1 - NominalTolerance);
+                default:
+                    throw new ApplicationException("Unexpected constraint type.");
+            }
+        }
+
+        public double DrawingMaximumDiameter(double parentProfileIntersectionDiameter)
+        {
+            switch (_type)
+            {
+                case DiameterConstraintType.IntersectionWithParentProfile:
+                    return parentProfileIntersectionDiameter;
+                case DiameterConstraintType.Limits:
+                    return _maximumDiameter;
+                case DiameterConstraintType.Nominal:
+                    return _maximumDiameter * (1 + NominalTolerance);
+                default:
+                    throw new ApplicationException("Unexpected constraint type.");
+
+            }
+        }
     }
 }

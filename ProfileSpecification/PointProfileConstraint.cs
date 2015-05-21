@@ -12,7 +12,7 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
 
         protected PointProfileConstraint(string name)
         {
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException();
+            if (string.IsNullOrEmpty(name)) throw new ArgumentException();
             _name = name;
         }
 

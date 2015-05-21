@@ -15,8 +15,8 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
 
         public DistanceBetweenPointsProfileConstraint(string pointAName, string pointBName, double minimumDistance, double maximumDistance)
         {
-            if (string.IsNullOrWhiteSpace(pointAName)) throw new ArgumentException();
-            if (string.IsNullOrWhiteSpace(pointBName)) throw new ArgumentException();
+            if (string.IsNullOrEmpty(pointAName)) throw new ArgumentException();
+            if (string.IsNullOrEmpty(pointBName)) throw new ArgumentException();
             if (pointAName == pointBName) throw new ArgumentException();
             if (double.IsNaN(minimumDistance) || double.IsNaN(maximumDistance)) throw new ArgumentException();
             if (minimumDistance < 0) throw new ArgumentOutOfRangeException();

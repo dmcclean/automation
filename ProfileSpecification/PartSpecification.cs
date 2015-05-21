@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using System.Collections.ObjectModel;
 
 namespace AutomationLibrary.Mathematics.ProfileSpecification
 {
@@ -87,7 +88,7 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             if (unitNameAttribute == null) throw new Exception("Unit not specified on geometry element.");
             var unitName = unitNameAttribute.Value;
             LengthUnit unit;
-            if (!Enum.TryParse<LengthUnit>(unitName, out unit)) throw new Exception("Unrecognized unit specified on geometry element.");
+            if (!TryParseEnum<LengthUnit>(unitName, out unit)) throw new Exception("Unrecognized unit specified on geometry element.");
 
             double scaleFactorToInches;
             switch (unit)
@@ -107,7 +108,7 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             if (minLengthAttribute == null) minLength = 0;
             else
             {
-                if (!double.TryParse(minLengthAttribute.Value, out minLength)) throw new Exception("Minimum length attribute on geometry element could not be parsed.");
+                if (!TryParseDouble(minLengthAttribute.Value, out minLength)) throw new Exception("Minimum length attribute on geometry element could not be parsed.");
             }
 
             double maxLength;
@@ -115,7 +116,7 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             if (maxLengthAttribute == null) maxLength = double.PositiveInfinity;
             else
             {
-                if (!double.TryParse(maxLengthAttribute.Value, out maxLength)) throw new Exception("Maximum length attribute on geometry element could not be parsed.");
+                if (!TryParseDouble(maxLengthAttribute.Value, out maxLength)) throw new Exception("Maximum length attribute on geometry element could not be parsed.");
             }
 
             minLength *= scaleFactorToInches;
@@ -129,7 +130,8 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             {
                 var profileSegment = ParseProfileSegment(profileElement, scaleFactorToInches);
                 if (profileSegments.Count == 0 && !profileSegment.IsMasterProfile) throw new Exception(string.Format("The first profile listed (at line {0}) must be the master profile, and so it may not have posMin and posMax attributes.", GetLine(profileElement)));
-                if (profileSegments.Count >= 1 && profileSegment.IsMasterProfile) throw new Exception(string.Format("Only the first profile listed may be the master profile. The profile at line {0} must have posMin and posMax attributes.", GetLine(profileElement)));
+                // TODO: reinstate this condition in a revised form
+                // if (profileSegments.Count >= 1 && profileSegment.IsMasterProfile) throw new Exception(string.Format("Only the first profile listed may be the master profile. The profile at line {0} must have posMin and posMax attributes.", GetLine(profileElement)));
                 profileSegments.Add(profileSegment);
             }
 
@@ -137,6 +139,35 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             // conflicts could happen if a child profile is too long or improperly placed to fit in the parent profile
 
             return new PartSpecification(name, revision, sourcePath, sourceLastModifiedTime, minLength, maxLength, profileSegments);
+        }
+
+        private static bool TryParseDouble(string s, out double result)
+        {
+            try
+            {
+                result = double.Parse(s);
+                return true;
+            }
+            catch
+            {
+                result = double.NaN;
+                return false;
+            }
+        }
+
+        private static bool TryParseEnum<T>(string s, out T result)
+            where T : struct
+        {
+            try
+            {
+                result = (T)Enum.Parse(typeof(T), s, false); // regard case
+                return true;
+            }
+            catch
+            {
+                result = default(T);
+                return false;
+            }
         }
 
         private static ConstrainedProfileSegment ParseProfileSegment(XElement profileElement, double scaleFactorToInches)
@@ -229,7 +260,7 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             if (attr == null) return null;
 
             double result;
-            if (double.TryParse(attr.Value, out result)) return result;
+            if (TryParseDouble(attr.Value, out result)) return result;
             else throw new Exception(string.Format("Unable to parse dimension at line {0}.", GetLine(attr)));
         }
 
@@ -239,7 +270,7 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             if (attr == null) return defaultValue;
 
             double result;
-            if (double.TryParse(attr.Value, out result)) return result;
+            if (TryParseDouble(attr.Value, out result)) return result;
             else throw new Exception(string.Format("Unable to parse dimension at line {0}.", GetLine(attr)));
         }
 
@@ -249,7 +280,7 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             if (attr == null) throw new Exception(string.Format("Unable to find required attribute {0} at line {1}.", name, GetLine(element)));
             
             double result;
-            if (double.TryParse(attr.Value, out result)) return result;
+            if (TryParseDouble(attr.Value, out result)) return result;
             else throw new Exception(string.Format("Unable to parse dimension at line {0}.", GetLine(attr)));
         }
 
@@ -262,7 +293,7 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
             if (nominalAttribute != null && minAttribute == null && maxAttribute == null)
             {
                 double nominalValue;
-                if (double.TryParse(nominalAttribute.Value, out nominalValue))
+                if (TryParseDouble(nominalAttribute.Value, out nominalValue))
                 {
                     nominalValue *= scaleFactorToInches;
                     return DiameterConstraint.FromNominalValue(nominalValue);
@@ -273,27 +304,29 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
                     else throw new Exception(string.Format("Unrecognized nominal diameter value at line {0}.", GetLine(nominalAttribute)));
                 }
             }
-            else if (nominalAttribute == null && (minAttribute != null || maxAttribute != null))
+            else if (minAttribute != null || maxAttribute != null)
             {
                 double min = 0;
                 double max = double.PositiveInfinity;
                 if (minAttribute != null)
                 {
-                    if (!double.TryParse(minAttribute.Value, out min)) throw new Exception(string.Format("Could not parse minimum diameter value at line {0}.", GetLine(minAttribute)));
+                    if (!TryParseDouble(minAttribute.Value, out min)) throw new Exception(string.Format("Could not parse minimum diameter value at line {0}.", GetLine(minAttribute)));
                 }
                 if (maxAttribute != null)
                 {
-                    if (!double.TryParse(maxAttribute.Value, out max)) throw new Exception(string.Format("Could not parse maximum diameter value at line {0}.", GetLine(maxAttribute)));
+                    if (!TryParseDouble(maxAttribute.Value, out max)) throw new Exception(string.Format("Could not parse maximum diameter value at line {0}.", GetLine(maxAttribute)));
                 }
 
                 min *= scaleFactorToInches;
                 max *= scaleFactorToInches;
 
+                // TODO: parse an informative nominal diameter that may have also been present
+
                 return DiameterConstraint.FromMinimumAndMaximum(min, max);
             }
             else
             {
-                throw new Exception(string.Format("Conflicting diameter constraints at line {0}. Cannot provide both a nominal dimension and min/max dimensions.", GetLine(element)));
+                throw new Exception(string.Format("Conflicting diameter constraints at line {0}. Provide a nominal dimension or min/max dimensions.", GetLine(element)));
             }
         }
 
@@ -311,6 +344,7 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
         public string Version { get { return _version; } }
         public string SourcePath { get { return _sourcePath; } }
         public DateTime? SourceLastModifiedTime { get { return _sourceLastModifiedTime; } }
+        public ReadOnlyCollection<ConstrainedProfileSegment> ProfileSegments { get { return new ReadOnlyCollection<ConstrainedProfileSegment>(_profileSegments); } }
 
         #endregion
     }
