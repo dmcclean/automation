@@ -76,19 +76,24 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
 
         public string Name { get { return _name; } }
 
-        private struct VisitPoint { public double MinXPosition; public double MaxXPosition; public DiameterConstraint Diameter; }
+        private enum Shape
+        {
+            Unknown,
+            Convex,
+            Concave            
+        }
+
+        private struct VisitPoint { public double MinXPosition; public double MaxXPosition; public DiameterConstraint Diameter; public Shape Shape; }
 
         public List<Vector2> ToleranceBoundary(double parentProfileDiameter)
         {
-            List<Vector2> result = new List<Vector2>();
-            
-            // visit order is going to start at the origin and go around clockwise in the ordinary XY plane
-            Stack<VisitPoint> visited = new Stack<VisitPoint>();
+            // We will make a list of all the "visit points" (encoding min/max positions in both directions, sequence, and shape)
+            var visitPoints = new List<VisitPoint>();
             
             // so let's pick out the origin and start there
             var origin = _constraints.Single(c => c is OriginProfileConstraint) as OriginProfileConstraint;
-            result.Add(new Vector2(0, origin.Diameter.DrawingMinimumDiameter(parentProfileDiameter)));
-            visited.Push(new VisitPoint { MinXPosition = 0, MaxXPosition = 0, Diameter = origin.Diameter });
+
+            visitPoints.Add(new VisitPoint { MinXPosition = 0, MaxXPosition = 0, Diameter = origin.Diameter, Shape = Shape.Unknown });
 
             // now let's go to all the positive points
             var positivePoints = _constraints.After(c => c is OriginProfileConstraint).ToArray();
@@ -103,16 +108,7 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
                     var minX = ((AbsolutelyPositionedPointProfileConstraint)point).MinimumPosition;
                     var maxX = ((AbsolutelyPositionedPointProfileConstraint)point).MaximumPosition;
 
-                    var minY = ((AbsolutelyPositionedPointProfileConstraint)point).Diameter.DrawingMinimumDiameter(parentProfileDiameter);
-
-                    // on the first one, include both
-                    if (i == 0)
-                    {
-                        result.Add(new Vector2(minX, minY));
-                    }
-                    result.Add(new Vector2(maxX, minY));
-
-                    visited.Push(new VisitPoint { MinXPosition = minX, MaxXPosition = maxX, Diameter = ((AbsolutelyPositionedPointProfileConstraint)point).Diameter });
+                    visitPoints.Add(new VisitPoint { MinXPosition = minX, MaxXPosition = maxX, Diameter = ((AbsolutelyPositionedPointProfileConstraint)point).Diameter, Shape = Shape.Unknown });
 
                     currentMinX = minX;
                     currentMaxX = maxX;
@@ -122,43 +118,20 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
                     var minDelX = ((RelativelyPositionedPointProfileConstraint)point).MinimumRelativePosition;
                     var maxDelX = ((RelativelyPositionedPointProfileConstraint)point).MaximumRelativePosition;
 
-                    var minY = ((RelativelyPositionedPointProfileConstraint)point).Diameter.DrawingMinimumDiameter(parentProfileDiameter);
-
                     var minX = currentMinX + minDelX;
                     var maxX = currentMaxX + maxDelX;
 
                     var resultingMinX = Math.Max(currentMaxX, minX);
 
-                    // on the first one, include both
-                    if (i == 0)
-                    {
-                        result.Add(new Vector2(resultingMinX, minY));
-                    }
-                    result.Add(new Vector2(maxX, minY));
-
-                    visited.Push(new VisitPoint { MinXPosition = resultingMinX, MaxXPosition = maxX, Diameter = ((RelativelyPositionedPointProfileConstraint)point).Diameter });
+                    visitPoints.Add(new VisitPoint { MinXPosition = resultingMinX, MaxXPosition = maxX, Diameter = ((RelativelyPositionedPointProfileConstraint)point).Diameter, Shape = Shape.Unknown});
 
                     currentMinX = resultingMinX;
                     currentMaxX = maxX;
                 }
                 else
                 {
-                    // TODO:
+                    // ignore between constraints
                 }
-            }
-
-            // now let's dequeue all the positive points (and the origin)
-            bool first = true;
-            while (visited.Count > 0)
-            {
-                var popped = visited.Pop();
-
-                if (first)
-                {
-                    result.Add(new Vector2(popped.MaxXPosition, popped.Diameter.DrawingMaximumDiameter(parentProfileDiameter)));
-                    first = false;
-                }
-                result.Add(new Vector2(popped.MinXPosition, popped.Diameter.DrawingMaximumDiameter(parentProfileDiameter)));
             }
 
             // now let's go to all the negative points
@@ -172,35 +145,71 @@ namespace AutomationLibrary.Mathematics.ProfileSpecification
                     var minX = ((AbsolutelyPositionedPointProfileConstraint)point).MinimumPosition;
                     var maxX = ((AbsolutelyPositionedPointProfileConstraint)point).MaximumPosition;
 
-                    var maxY = ((AbsolutelyPositionedPointProfileConstraint)point).Diameter.DrawingMaximumDiameter(parentProfileDiameter);
+                    visitPoints.Insert(0, new VisitPoint { MinXPosition = minX, MaxXPosition = maxX, Diameter = ((AbsolutelyPositionedPointProfileConstraint)point).Diameter, Shape = Shape.Unknown });
 
-                    result.Add(new Vector2(maxX, maxY));
-                    // on the last one, include both
-                    if (i == negativePointsCount - 1)
-                    {
-                        result.Add(new Vector2(minX, maxY));
-                    }
+                    currentMinX = minX;
+                    currentMaxX = maxX;
+                }
+                else if (point is RelativelyPositionedPointProfileConstraint)
+                {
+                    var minDelX = ((RelativelyPositionedPointProfileConstraint)point).MinimumRelativePosition;
+                    var maxDelX = ((RelativelyPositionedPointProfileConstraint)point).MaximumRelativePosition;
 
-                    visited.Push(new VisitPoint { MinXPosition = minX, MaxXPosition = maxX, Diameter = ((AbsolutelyPositionedPointProfileConstraint)point).Diameter });
+                    var minX = currentMinX - maxDelX;
+                    var maxX = currentMaxX - minDelX;
+
+                    var resultingMaxX = Math.Min(currentMinX, maxX);
+
+                    visitPoints.Insert(0, new VisitPoint { MinXPosition = minX, MaxXPosition = resultingMaxX, Diameter = ((RelativelyPositionedPointProfileConstraint)point).Diameter, Shape = Shape.Unknown });
+
+                    currentMinX = minX;
+                    currentMaxX = resultingMaxX;
                 }
                 else
                 {
-                    // TODO:
+                    // ignore between constraints
                 }
             }
 
-            // now let's dequeue all the negative points)
-            first = true;
-            while (visited.Count > 0)
-            {
-                var popped = visited.Pop();
+            // Create a list to hold the result
+            var result = new List<Vector2>();
 
-                if (first)
-                {
-                    result.Add(new Vector2(popped.MinXPosition, popped.Diameter.DrawingMinimumDiameter(parentProfileDiameter)));
-                    first = false;
-                }
-                result.Add(new Vector2(popped.MaxXPosition, popped.Diameter.DrawingMinimumDiameter(parentProfileDiameter)));
+            // We have now computed the total list of visit points, ordered by increasing x. Next we compute their convexity.
+            // First we will visit them all in forward order, emitting the minimum size tolerance
+            var currentMinY = visitPoints[0].Diameter.DrawingMinimumDiameter(parentProfileDiameter);
+            for (int i = 0; i < visitPoints.Count; i++)
+            {
+                var point = visitPoints[i];
+                var last = i == (visitPoints.Count - 1);
+
+                var minY = point.Diameter.DrawingMinimumDiameter(parentProfileDiameter);
+
+                bool minWentDown = minY <= currentMinY;
+                var bindingX = minWentDown ? point.MinXPosition : point.MaxXPosition;
+
+                result.Add(new Vector2(bindingX, minY));
+                if (last && minWentDown) result.Add(new Vector2(point.MaxXPosition, minY));
+
+                currentMinY = minY;
+            }
+
+            // We now visit them all in reverse order, emitting the maximum size tolerance
+            var currentMaxY = visitPoints[visitPoints.Count - 1].Diameter.DrawingMaximumDiameter(parentProfileDiameter);
+            for (int i = visitPoints.Count - 1; i >= 0; i--)
+            {
+                var point = visitPoints[i];
+                var last = i == 0;
+
+                var maxY = point.Diameter.DrawingMaximumDiameter(parentProfileDiameter);
+
+                bool maxWentUp = maxY >= currentMaxY;
+                var bindingX = maxWentUp ? point.MaxXPosition : point.MinXPosition;
+
+                result.Add(new Vector2(bindingX, maxY));
+
+                if (last && maxWentUp) result.Add(new Vector2(point.MinXPosition, maxY));
+
+                currentMaxY = maxY;
             }
 
             return result;

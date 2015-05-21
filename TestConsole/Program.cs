@@ -14,7 +14,8 @@ namespace TestConsole
     {
         static void Main(string[] args)
         {
-            TestClick();
+            ProfileTest();
+            //TestClick();
             //TestEclipsePipe();
         }
 
@@ -275,14 +276,33 @@ namespace TestConsole
 
         static void ProfileTest() 
         {
-            var spec = PartSpecification.Parse(@"F:\ExampleGuideWireProfileSpec.xml");
+            var spec = PartSpecification.Parse(@"F:\ProfileSpecifications\511907-001.xml");
 
 
+            foreach (var segment in spec.ProfileSegments)
+            {
+                if (segment.IsMasterProfile)
+                {
+                    var boundary = segment.ToleranceBoundary(0);
+                    boundary.Add(boundary[0]);
+
+                    using (var writer = System.IO.File.CreateText(@"F:\tolerance.csv"))
+                    {
+                        writer.WriteLine("N, X, Y");
+                        int n = 0;
+                        foreach (var point in boundary)
+                        {
+                            writer.WriteLine("\"{0}\",{1:f5},{2:f5}", n++, point.X, point.Y);
+                        }
+                    }
+                    break;
+                }
+            }
 
 
             List<Vector2> points = new List<Vector2>();
 
-            using (var reader = System.IO.File.OpenText(@"F:\wire-profile.csv"))
+            using (var reader = System.IO.File.OpenText(@"F:\Measured Profiles\doug-test-2.csv"))
             {
                 reader.ReadLine(); // skip header
                 
@@ -310,8 +330,6 @@ namespace TestConsole
                 var start = simplified[i];
                 var end = simplified[i + 1];
 
-                //if ((end.X - start.X) < .2) break;
-
                 var segPoints = SelectPointsBetween(points, start.X, end.X);
                 var segRoughLine = GeometricFits.FitLine(segPoints);
                 var segFineLine = segRoughLine;
@@ -334,9 +352,6 @@ namespace TestConsole
 
                 fitLines.Add(Tuple.Create(start.X, end.X, segFineLine));
             }
-
-            fitLines.RemoveAt(12);
-            fitLines.RemoveAt(7);
 
             using (var writer = System.IO.File.CreateText(@"F:\profile-fit-lines.csv"))
             {
