@@ -7,6 +7,32 @@ namespace AutomationLibrary.Collections
 {
     public static class CollectionExtensions
     {
+        public static T FirstOr<T>(this IEnumerable<T> source, T alternate)
+        {
+            foreach (T t in source)
+                return t;
+            return alternate;
+        }
+
+        public static IEnumerable<T> After<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+        {
+            bool haveSeen = false;
+            foreach (var item in source)
+            {
+                if (haveSeen) yield return item;
+                else if (predicate(item)) haveSeen = true;
+            }
+        }
+
+        public static IEnumerable<T> Before<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+        {
+            foreach (var item in source)
+            {
+                if (predicate(item)) yield break;
+                else yield return item;
+            }
+        }
+
         public static void Swap<T>(ref T a, ref T b)
         {
             var temp = a;
