@@ -302,7 +302,7 @@ namespace TestConsole
 
             List<Vector2> points = new List<Vector2>();
 
-            using (var reader = System.IO.File.OpenText(@"F:\Profile353.csv"))
+            using (var reader = System.IO.File.OpenText(@"F:\Profile360.csv"))
             {
                 reader.ReadLine(); // skip header
                 
@@ -333,7 +333,7 @@ namespace TestConsole
                 // let the blip be a short horizontal section much above its surroundings)
                 foreach (var segment in simplified.AsLineSegments())
                 {
-                    if (segment.Length > 1) continue;
+                    if (segment.Length > .2) continue;
                     var angle = Math.Abs(segment.Offset.AngleFromXAxis) * 180 / Math.PI;
                     if (angle > 5) continue;
 
@@ -352,6 +352,39 @@ namespace TestConsole
 
                 // order candidates by decreasing score
                 candidates.Sort((c1, c2) => -c1.Item2.CompareTo(c2.Item2));
+
+                // limit candidates to a reasonable number to avoid complexity blowup in failure cases
+                candidates = candidates.Take(10).ToList();
+
+                // merge adjacent candidates into one
+                var result = new List<LineSegment2>();
+                while (candidates.Count > 0)
+                {
+                    var newResult = candidates[0].Item1;
+                    candidates.RemoveAt(0);
+
+                    // we may wish to extend it by merging it with any other top candidates that are adjacent
+                    int i = 0;
+                    while(true)
+                    {
+                        if (i >= candidates.Count) break;
+                        var extensionCandidate = candidates[i].Item1;
+
+                        if (extensionCandidate.Destination.Equals(newResult.Origin))
+                        {
+                            candidates.RemoveAt(i);
+                            newResult = LineSegment2.FromOriginAndDestination(extensionCandidate.Origin, newResult.Destination);
+                        }
+                        else if (newResult.Destination.Equals(extensionCandidate.Origin))
+                        {
+                            candidates.RemoveAt(i);
+                            newResult = LineSegment2.FromOriginAndDestination(newResult.Origin, extensionCandidate.Destination);
+                        }
+                        else i++;
+                    }
+
+                    result.Add(newResult);
+                }
 
                 if (candidates.Count == 0) blip = null;
                 else
