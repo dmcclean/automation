@@ -302,7 +302,7 @@ namespace TestConsole
 
             List<Vector2> points = new List<Vector2>();
 
-            using (var reader = System.IO.File.OpenText(@"F:\Profile360.csv"))
+            using (var reader = System.IO.File.OpenText(@"F:\Profile378.csv"))
             {
                 reader.ReadLine(); // skip header
                 
