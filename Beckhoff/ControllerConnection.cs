@@ -8,7 +8,8 @@ using TwinCAT.Ads;
 namespace MassBayEngineering.Interop.Beckhoff
 {
     public sealed class ControllerConnection
-        : IControllerConnection<string>
+        : IControllerConnection<string>,
+          IDisposable
     {
         private readonly TcAdsClient _client;
         private readonly DeclarationSpace _declarationSpace;
@@ -170,6 +171,11 @@ namespace MassBayEngineering.Interop.Beckhoff
 
                 return (IVariable<TValue>)resultVariable;
             }
+        }
+
+        public void Dispose()
+        {
+            if (_client != null) _client.Dispose();
         }
     }
 }
