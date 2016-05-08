@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using AutomationLibrary.Mathematics;
+using AutomationLibrary.Mathematics.Geometry;
 
 namespace AutomationLibrary.Collections
 {
@@ -21,6 +23,27 @@ namespace AutomationLibrary.Collections
             {
                 if (haveSeen) yield return item;
                 else if (predicate(item)) haveSeen = true;
+            }
+        }
+
+        public static IEnumerable<Tuple<T, T>> AsPairs<T>(this IEnumerable<T> source)
+        {
+            var e = source.GetEnumerator();
+            if (!e.MoveNext()) yield break;
+            var prior = e.Current;
+            while (e.MoveNext())
+            {
+                var current = e.Current;
+                yield return Tuple.Create(prior, current);
+                prior = current;
+            }
+        }
+
+        public static IEnumerable<LineSegment2> AsLineSegments(this IEnumerable<Vector2> points)
+        {
+            foreach(var pair in points.AsPairs())
+            {
+                yield return LineSegment2.FromOriginAndDestination(pair.Item1, pair.Item2);
             }
         }
 
@@ -45,8 +68,8 @@ namespace AutomationLibrary.Collections
             var queue = new Queue<T>(n);
             foreach (var item in items.Skip(n))
             {
-                if (queue.Count >= n) yield return queue.Dequeue();
                 queue.Enqueue(item);
+                if (queue.Count > n) yield return queue.Dequeue();
             }
         }
 

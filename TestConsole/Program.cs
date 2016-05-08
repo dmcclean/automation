@@ -276,7 +276,7 @@ namespace TestConsole
 
         static void ProfileTest() 
         {
-            var spec = PartSpecification.Parse(@"F:\ProfileSpecifications\511907-001.xml");
+            var spec = PartSpecification.Parse(@"F:\Profiles\511955-002.xml");
 
 
             foreach (var segment in spec.ProfileSegments)
@@ -302,7 +302,7 @@ namespace TestConsole
 
             List<Vector2> points = new List<Vector2>();
 
-            using (var reader = System.IO.File.OpenText(@"F:\Measured Profiles\doug-test-2.csv"))
+            using (var reader = System.IO.File.OpenText(@"F:\Profile378.csv"))
             {
                 reader.ReadLine(); // skip header
                 
@@ -321,34 +321,134 @@ namespace TestConsole
                 }
             }
 
-            var simplified = AutomationLibrary.Mathematics.Curves.Polyline.Simplify(points, 0.0003);
+            var simplified = AutomationLibrary.Mathematics.Curves.Polyline.Simplify(points, 0.0005);
+
+            // identify "blip" if there is one
+            var findBlip = true;
+            LineSegment2 blip = null;
+            if (findBlip)
+            {
+                var candidates = new List<Tuple<LineSegment2, double>>(); // candidate segment and score
+
+                // let the blip be a short horizontal section much above its surroundings)
+                foreach (var segment in simplified.AsLineSegments())
+                {
+                    if (segment.Length > .2) continue;
+                    var angle = Math.Abs(segment.Offset.AngleFromXAxis) * 180 / Math.PI;
+                    if (angle > 5) continue;
+
+                    var midX = segment.Midpoint.X;
+                    var midY = segment.Midpoint.Y;
+                    var minX = Math.Min(segment.Origin.X, segment.Destination.X);
+                    var maxX = Math.Max(segment.Origin.X, segment.Destination.X);
+                    var averageBackgroundY = (from p in points
+                                             where ((midX - 1) < p.X && p.X < (midX + 1)) // must be within 1 inch of candidate midpoint
+                                                   && (p.X < minX || maxX < p.X) // must not be within segment itself
+                                                   && (p.Y > 0.001) // must not be off the wire
+                                             select p.Y).Average();
+                    var score = midY - averageBackgroundY;
+                    if (score > 0) candidates.Add(Tuple.Create(segment, score));
+                }
+
+                // order candidates by decreasing score
+                candidates.Sort((c1, c2) => -c1.Item2.CompareTo(c2.Item2));
+
+                // limit candidates to a reasonable number to avoid complexity blowup in failure cases
+                candidates = candidates.Take(10).ToList();
+
+                // merge adjacent candidates into one
+                var result = new List<LineSegment2>();
+                while (candidates.Count > 0)
+                {
+                    var newResult = candidates[0].Item1;
+                    candidates.RemoveAt(0);
+
+                    // we may wish to extend it by merging it with any other top candidates that are adjacent
+                    int i = 0;
+                    while(true)
+                    {
+                        if (i >= candidates.Count) break;
+                        var extensionCandidate = candidates[i].Item1;
+
+                        if (extensionCandidate.Destination.Equals(newResult.Origin))
+                        {
+                            candidates.RemoveAt(i);
+                            newResult = LineSegment2.FromOriginAndDestination(extensionCandidate.Origin, newResult.Destination);
+                        }
+                        else if (newResult.Destination.Equals(extensionCandidate.Origin))
+                        {
+                            candidates.RemoveAt(i);
+                            newResult = LineSegment2.FromOriginAndDestination(newResult.Origin, extensionCandidate.Destination);
+                        }
+                        else i++;
+                    }
+
+                    result.Add(newResult);
+                }
+
+                if (candidates.Count == 0) blip = null;
+                else
+                {
+                    blip = candidates[0].Item1; // hooray, we found the blip
+                    candidates.RemoveAt(0);
+                    
+                    // we may wish to extend it by merging it with any other top candidates that are adjacent
+                    while (candidates.Count > 0)
+                    {
+                        var extensionCandidate = candidates[0].Item1;
+                        candidates.RemoveAt(0);
+
+                        if (extensionCandidate.Destination.Equals(blip.Origin))
+                        {
+                            blip = LineSegment2.FromOriginAndDestination(extensionCandidate.Origin, blip.Destination);
+                        }
+                        else if (blip.Destination.Equals(extensionCandidate.Origin))
+                        {
+                            blip = LineSegment2.FromOriginAndDestination(blip.Origin, extensionCandidate.Destination);
+                        }
+                        else break;
+                    }
+                }
+            }
+
+            var resimplified = new List<LineSegment2>();
+            foreach (var seg in simplified.AsLineSegments())
+            {
+                var startX = seg.Origin.X;
+                var endX = seg.Destination.X;
+
+                var blipStartX = blip.Origin.X - .05;
+                var blipEndX = blip.Destination.X + .05;
+
+                if (startX < blipStartX || blipEndX < endX) resimplified.Add(seg);
+            }
+            resimplified.Add(blip);
+
+            var resimplifiedPoints = new List<Vector2>();
+            foreach (var seg in resimplified)
+            {
+                if (!resimplifiedPoints.Contains(seg.Origin)) resimplifiedPoints.Add(seg.Origin);
+                if (!resimplifiedPoints.Contains(seg.Destination)) resimplifiedPoints.Add(seg.Destination);
+            }
+            resimplifiedPoints.Sort((p1, p2) => p1.X.CompareTo(p2.X));
 
             var fitLines = new List<Tuple<double,double,Line2>>();
 
-            for (int i = 0; i < simplified.Count - 1; i++)
+            for (int i = 0; i < resimplifiedPoints.Count - 1; i++)
             {
-                var start = simplified[i];
-                var end = simplified[i + 1];
+                var start = resimplifiedPoints[i];
+                var end = resimplifiedPoints[i + 1];
 
                 var segPoints = SelectPointsBetween(points, start.X, end.X);
-                var segRoughLine = GeometricFits.FitLine(segPoints);
-                var segFineLine = segRoughLine;
-
                 var n = segPoints.Count;
 
-                if (n > 20)
-                {
-                    var skip = n / 20;
-                    var residuals = from p in segPoints
-                                    select Tuple.Create(segRoughLine.DistanceFromLine(p), p);
-                    var residualsNotNearEnds = residuals.Skip(skip).Take(n - 2 * skip);
-                    var nonOutliers = from r in residualsNotNearEnds
-                                      orderby r.Item1 descending
-                                      select r.Item2;
-                    var nonOutlierPoints = nonOutliers.Skip(skip).ToArray();
+                int skip = 0;
+                if (n > 20) skip = n / 10;
+                else if (n > 4) skip = n / 4;
 
-                    segFineLine = GeometricFits.FitLine(nonOutlierPoints);
-                }
+                var notNearEnds = segPoints.SkipBothEnds(skip);
+
+                var segFineLine = GeometricFits.FitLine(notNearEnds.ToList());
 
                 fitLines.Add(Tuple.Create(start.X, end.X, segFineLine));
             }
@@ -356,6 +456,11 @@ namespace TestConsole
             using (var writer = System.IO.File.CreateText(@"F:\profile-fit-lines.csv"))
             {
                 writer.WriteLine("X,Y");
+                foreach (var point in resimplifiedPoints)
+                {
+                    writer.WriteLine("{0},{1}", point.X, point.Y);
+                }
+                /*
                 writer.WriteLine("{0},{1}", fitLines[0].Item1, fitLines[0].Item3.Intercept + fitLines[0].Item3.Slope * fitLines[0].Item1);
 
                 for (int i = 0; i < fitLines.Count - 1; i++)
@@ -370,6 +475,7 @@ namespace TestConsole
 
                 var lastIdx = fitLines.Count - 1;
                 writer.WriteLine("{0},{1}", fitLines[lastIdx].Item2, fitLines[lastIdx].Item3.Intercept + fitLines[lastIdx].Item3.Slope * fitLines[lastIdx].Item2);
+                 */
             }
 
             Console.WriteLine("Profile processed.");
